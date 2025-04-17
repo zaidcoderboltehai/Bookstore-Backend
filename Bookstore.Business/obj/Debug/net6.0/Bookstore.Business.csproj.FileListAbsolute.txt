@@ -1,0 +1,15 @@
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.csproj.AssemblyReference.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.AssemblyInfoInputs.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.AssemblyInfo.cs
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.csproj.CoreCompileInputs.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\bin\Debug\net6.0\Bookstore.Business.deps.json
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\bin\Debug\net6.0\Bookstore.Business.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\bin\Debug\net6.0\Bookstore.Business.pdb
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\bin\Debug\net6.0\Bookstore.Data.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\bin\Debug\net6.0\Bookstore.Data.pdb
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstor.B7375BCD.Up2Date
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\refint\Bookstore.Business.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\Bookstore.Business.pdb
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\net6.0\ref\Bookstore.Business.dll

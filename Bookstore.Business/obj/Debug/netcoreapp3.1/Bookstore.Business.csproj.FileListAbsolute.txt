@@ -1,0 +1,5 @@
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\netcoreapp3.1\Bookstore.Business.csproj.AssemblyReference.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\netcoreapp3.1\Bookstore.Business.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\netcoreapp3.1\Bookstore.Business.AssemblyInfoInputs.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\netcoreapp3.1\Bookstore.Business.AssemblyInfo.cs
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Business\obj\Debug\netcoreapp3.1\Bookstore.Business.csproj.CoreCompileInputs.cache
