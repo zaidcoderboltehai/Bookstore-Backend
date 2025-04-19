@@ -10,8 +10,23 @@ namespace Bookstore.Data
         {
         }
 
+        // Main Entities
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Admin> Admins { get; set; } = null!;
-        public DbSet<PasswordReset> PasswordResets { get; set; } = null!; // ✅ Added for forgot‑password flow
+
+        // Security Related Entities
+        public DbSet<PasswordReset> PasswordResets { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!; // ✅ Added for token refresh functionality
+
+        // Optional: Add model configurations
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Configure RefreshToken entity
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasIndex(rt => rt.Token).IsUnique();
+                entity.Property(rt => rt.Expires).IsRequired();
+            });
+        }
     }
 }

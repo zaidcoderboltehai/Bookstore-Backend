@@ -6,16 +6,20 @@ namespace Bookstore.Data.Interfaces
 {
     public interface IUserRepository
     {
+        // User Registration
         Task<User> RegisterUser(User user);
+
+        // Authentication
         Task<User?> LoginUser(string email, string password);
         Task<bool> UserExists(string email);
 
-        // Existing methods
+        // User Management
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User?> GetUserByIdAsync(int id);
-
-        // New methods
         Task<User?> GetUserByEmail(string email);
-        Task UpdateUser(User user); // ✅ Added for password reset flow
+
+        // Update/Delete Operations
+        Task UpdateUserAsync(User user); // Updated to Async pattern
+        Task DeleteUserAsync(int id);     // New delete method
     }
 }

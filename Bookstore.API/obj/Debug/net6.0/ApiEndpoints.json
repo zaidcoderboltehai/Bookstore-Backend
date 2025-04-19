@@ -33,6 +33,22 @@
   },
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/AdminAuth/refresh-token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Bookstore.API.Models.RefreshTokenRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "Register",
     "RelativePath": "api/AdminAuth/register",
     "HttpMethod": "POST",
@@ -42,6 +58,22 @@
       {
         "Name": "request",
         "Type": "Bookstore.API.Models.AdminRegisterDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
+    "Method": "ResetPassword",
+    "RelativePath": "api/AdminAuth/reset-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Bookstore.API.Models.ResetPasswordDto",
         "IsRequired": true
       }
     ],
@@ -179,6 +211,22 @@
       {
         "Name": "dto",
         "Type": "Bookstore.API.Models.UserLoginDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Bookstore.API.Controllers.UsersController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/Users/refresh-token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Bookstore.API.Models.RefreshTokenRequest",
         "IsRequired": true
       }
     ],

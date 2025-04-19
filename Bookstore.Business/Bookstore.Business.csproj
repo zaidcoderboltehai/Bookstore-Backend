@@ -1,21 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+	<!-- .NET SDK ko use karne ki instruction -->
 	<PropertyGroup>
+		<!-- TargetFramework ka matlab hai ki yeh project kis .NET version pe run karega -->
 		<TargetFramework>net6.0</TargetFramework>
+
+		<!-- ImplicitUsings enable ka matlab hai ki system libraries automatically import ho jayengi -->
 		<ImplicitUsings>enable</ImplicitUsings>
+
+		<!-- Nullable enable ka matlab hai ki nullable reference types ko enable kiya gaya hai -->
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- .NET 6 Compatible Packages -->
+		<!-- Yeh section .NET 6 compatible packages ko define karta hai jo project ke liye necessary hain -->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<!-- BCrypt.Net-Next: Password hashing ke liye ek popular library -->
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+		<!-- Configuration ko manage karne ke liye required library -->
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.32.0" />
+		<!-- JWT tokens ke liye necessary package -->
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.32.0" />
+		<!-- JWT tokens ke liye ek aur required package -->
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Yeh project reference hai jo kisi doosre project ko include karta hai (Bookstore.Data.csproj) -->
 		<ProjectReference Include="..\Bookstore.Data\Bookstore.Data.csproj" />
+		<!-- Bookstore.Data project ko reference kar rahe hain, jisme database-related functionality hoti hai -->
 	</ItemGroup>
 
 </Project>

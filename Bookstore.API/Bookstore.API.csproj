@@ -1,37 +1,87 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<!-- 
+  Ye project file hai .NET web project ke liye. 
+  Isme SDK type "Microsoft.NET.Sdk.Web" use ho raha hai, 
+  jo ASP.NET Core web applications ke liye hota hai.
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
+	<!-- 
+	  PropertyGroup ke andar basic configuration hoti hai.
+	  - TargetFramework: .NET 6 ka use ho raha hai
+	  - LangVersion: C# ka latest version use kar rahe hain
+	  - Nullable: nullable reference types enable kiya gaya hai
+	-->
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+	<!-- 
+	  Ye ItemGroup hai jisme required NuGet packages list kiye gaye hain.
+	  Ye packages project ko alag-alag functionality dete hain.
+	-->
 	<ItemGroup>
-		<!-- Core Packages -->
+		<!-- 
+		  JWT Authentication ke liye
+		  (User login/authentication securely karne ke liye use hota hai)
+		-->
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.0" />
+
+		<!-- 
+		  JSON serialization ke liye Newtonsoft.Json use karne ke liye 
+		  (Controllers mein JSON data handle karne ke liye useful)
+		-->
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
+
+		<!-- 
+		  Entity Framework Core design-time tools ke liye 
+		  (jaise migration commands run karne ke liye)
+		-->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+
+		<!-- 
+		  Swagger documentation ke liye 
+		  (API ko browser mein test karne aur samajhne ke liye use hota hai)
+		-->
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 
-		<!-- Configuration Packages -->
+		<!-- 
+		  Configuration settings ko manage karne ke liye 
+		  (jaise appsettings.json file ko read karne ke liye)
+		-->
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
 
-		<!-- Security Packages -->
+		<!-- 
+		  JWT aur Token handling ke liye security packages 
+		  (JWT create/validate karne ke liye use hote hain)
+		-->
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.32.0" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.32.0" />
 
-		<!-- Additional Required Packages -->
+		<!-- 
+		  Password hashing ke liye BCrypt use kiya gaya hai 
+		  (secure password store/verify karne ke liye)
+		-->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 	</ItemGroup>
 
+	<!-- 
+	  Ye dusra ItemGroup hai jisme project ke andar ke aur 
+	  custom projects ko reference kiya gaya hai.
+	  Jaise ki Business layer aur Data layer.
+	-->
 	<ItemGroup>
-		<!-- ProjectReference wali entries -->
+		<!-- Business logic wala project reference -->
 		<ProjectReference Include="..\Bookstore.Business\Bookstore.Business.csproj" />
+
+		<!-- Data access layer wala project reference -->
 		<ProjectReference Include="..\Bookstore.Data\Bookstore.Data.csproj" />
-		<!-- aur koi references -->
+
+		<!-- Yaha aur bhi references add kiye ja sakte hain agar required ho -->
 	</ItemGroup>
 
 </Project>

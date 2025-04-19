@@ -1,24 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+	<!-- .NET SDK ko use karne ki instruction -->
 	<PropertyGroup>
+		<!-- TargetFramework ka matlab hai ki yeh project kis .NET version pe run karega -->
 		<TargetFramework>net6.0</TargetFramework>
+
+		<!-- ImplicitUsings enable ka matlab hai ki system libraries automatically import ho jayengi -->
 		<ImplicitUsings>enable</ImplicitUsings>
+
+		<!-- Nullable enable ka matlab hai ki nullable reference types ko enable kiya gaya hai -->
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- Essential EF Core Packages for .NET 6 -->
+		<!-- Yeh section zaroori EF Core packages ko define karta hai jo .NET 6 ke liye hain -->
+
+		<!-- BCrypt.Net-Next: Password hashing ke liye ek popular library -->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+		<!-- Microsoft.EntityFrameworkCore: Entity Framework Core ke core functionalities ko use karne ke liye package -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
+
+		<!-- Microsoft.EntityFrameworkCore.SqlServer: SQL Server ko support karta hai Entity Framework Core ke through -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.0" />
 
-		<!-- Corrected Design Package (IncludeAssets hataya gaya hai) -->
+		<!-- Corrected Design Package: Yeh package design-time tools ke liye hota hai, aur PrivateAssets ka matlab hai ki yeh package runtime pe directly use nahi hota -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
+
+		<!-- Microsoft.EntityFrameworkCore.Tools: Yeh tools package Entity Framework ke liye CLI commands ko run karne ke liye use hota hai -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<!-- PrivateAssets: Yeh package runtime ke liye directly use nahi hota -->
+			<PrivateAssets>all</PrivateAssets>
+
+			<!-- IncludeAssets: Yeh specify karta hai ki kis assets ko include kiya jaayega -->
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
 

@@ -3,8 +3,9 @@ C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\B
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.AssemblyInfoInputs.cache
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.AssemblyInfo.cs
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.csproj.CoreCompileInputs.cache
-C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.sourcelink.json
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\appsettings.Development.json
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\appsettings.json
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\Bookstore.API.staticwebassets.endpoints.json

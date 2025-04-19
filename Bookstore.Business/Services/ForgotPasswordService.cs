@@ -42,13 +42,14 @@ namespace Bookstore.Business.Services
 
             var frontUrl = _config["Frontend:ResetPasswordUrl"];
             var link = $"{frontUrl}?token={token}";
-            // TODO: Send email
+            // TODO: Implement email sending logic here
         }
 
         public async Task SendAdminForgotPasswordLink(string email, string secretKey)
         {
             if (secretKey != _config["AdminSecretKey"])
                 throw new UnauthorizedAccessException("Invalid SecretKey");
+
             if (!await _adminRepo.AdminExists(email))
                 throw new InvalidOperationException("Admin not found");
 
@@ -63,7 +64,7 @@ namespace Bookstore.Business.Services
 
             var frontUrl = _config["Frontend:ResetPasswordUrl"];
             var link = $"{frontUrl}?token={token}";
-            // TODO: Send email
+            // TODO: Implement email sending logic here
         }
 
         public async Task ResetPassword(Guid token, string newPassword)
@@ -74,25 +75,24 @@ namespace Bookstore.Business.Services
             if (record.ExpiryUtc < DateTime.UtcNow)
                 throw new InvalidOperationException("Token expired");
 
-            // Check if email belongs to user or admin
             if (await _userRepo.UserExists(record.Email))
             {
-                // ✅ Fixed: Use GetUserByEmail instead of LoginUser
                 var user = await _userRepo.GetUserByEmail(record.Email);
                 if (user == null)
                     throw new InvalidOperationException("User not found");
 
+                // ✅ Fixed method name mismatch
                 user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
-                await _userRepo.UpdateUser(user); // Save updated password
+                await _userRepo.UpdateUserAsync(user); // Changed to Async
             }
             else
             {
                 var admin = await _adminRepo.GetByEmail(record.Email);
                 admin.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12);
-                await _adminRepo.RegisterAdmin(admin); // Save admin (if using UpdateAdminAsync, use that instead)
+                await _adminRepo.UpdateAdminAsync(admin); // Changed to UpdateAdminAsync
             }
 
-            await _resetRepo.DeleteAsync(record); // Cleanup the token
+            await _resetRepo.DeleteAsync(record);
         }
     }
 }
