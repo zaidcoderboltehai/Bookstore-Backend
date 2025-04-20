@@ -6,11 +6,16 @@ namespace Bookstore.Data.Interfaces
 {
     public interface IRefreshTokenRepository
     {
+        // Naya refresh token create karna
         Task<RefreshToken> CreateAsync(RefreshToken token);
+
+        // Token ke basis pe refresh token dhoondhna (optional return type, agar nahi mila toh null)
         Task<RefreshToken?> FindByTokenAsync(string token);
+
+        // Refresh token ko delete karna (id ke through)
         Task DeleteAsync(int id);
 
-        // ✅ Added method for user-specific token cleanup
+        // ✅ User-specific tokens ko cleanup karne ke liye method add kiya gaya hai
         Task<IEnumerable<RefreshToken>> GetByUserIdAsync(int userId);
     }
 }

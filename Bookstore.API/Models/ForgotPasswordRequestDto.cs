@@ -3,25 +3,25 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Bookstore.API.Models
 {
-    // 👇 Ye class tab use hoti hai jab koi user ya admin password bhool jaata hai
+    // 👇 Ye class tab use hoti hai jab koi user ya admin apna password bhool jaata hai
     public class ForgotPasswordRequestDto
     {
-        // 👇 Email address dena zaroori hai (validate bhi ho raha hai ki sahi format mein ho)
+        // 👇 Email address dena zaroori hai (aur check bhi hoga ki format sahi hai ya nahi)
         [Required, EmailAddress]
         public string Email { get; set; }
 
-        // 👇 Ye optional hai — sirf admin ke liye use hota hai password reset verify karne ke liye
-        public string? SecretKey { get; set; } // Optional, for admin
+        // 👇 Ye optional property hai — sirf admin ke liye hoti hai verify karne ke liye
+        public string? SecretKey { get; set; } // Optional, sirf admin ke liye
     }
 
-    // 👇 Ye class tab use hoti hai jab user ya admin password reset karta hai
+    // 👇 Ye class tab kaam aati hai jab user ya admin apna password reset karta hai
     public class ResetPasswordDto
     {
-        // 👇 Reset token required hai (ye token forgot-password ke response se milta hai)
+        // 👇 Reset token dena zaroori hai (ye token forgot password ke response mein milta hai)
         [Required]
         public Guid Token { get; set; }
 
-        // 👇 Naya password jo user set karega (minimum 6 characters hona chahiye)
+        // 👇 Naya password set karne ke liye (minimum 6 characters hona chahiye)
         [Required, MinLength(6)]
         public string NewPassword { get; set; }
     }

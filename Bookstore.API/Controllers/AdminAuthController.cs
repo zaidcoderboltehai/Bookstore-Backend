@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿// Required namespaces import kiye gaye hain
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Bookstore.Business.Interfaces;
 using Bookstore.Data.Entities;
@@ -14,17 +15,24 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Bookstore.API.Controllers
 {
+    // Isse bataya gaya hai ki ye ek API controller hai
     [ApiController]
+
+    // API ka route set kiya gaya hai: /AdminAuth
     [Route("[controller]")]
+
+    // Sirf Admin role wale hi access kar sakte hain
     [Authorize(Roles = "Admin")]
     public class AdminAuthController : ControllerBase
     {
+        // Private fields jo constructor ke through initialize hote hain
         private readonly IAdminAuthService _authService;
         private readonly ITokenService _tokenService;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IHostEnvironment _environment;
         private readonly ILogger<AdminAuthController> _logger;
 
+        // Constructor dependency injection ke through sab services set karta hai
         public AdminAuthController(
             IAdminAuthService authService,
             ITokenService tokenService,
@@ -39,14 +47,17 @@ namespace Bookstore.API.Controllers
             _logger = logger;
         }
 
+        // Admin ko register karne ke liye API
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register(AdminRegisterDto request)
         {
             try
             {
+                // Logging: register ka try kiya gaya
                 _logger.LogInformation("Admin registration attempt for {Email}", request.Email);
 
+                // Naya admin object banaya gaya
                 var admin = new Admin
                 {
                     FirstName = request.FirstName.Trim(),
@@ -55,9 +66,13 @@ namespace Bookstore.API.Controllers
                     SecretKey = request.SecretKey
                 };
 
+                // Auth service ke through register call kiya
                 var createdAdmin = await _authService.Register(admin, request.Password, request.SecretKey);
+
+                // Logging: registration success
                 _logger.LogInformation("Admin registered successfully: {AdminId}", createdAdmin.Id);
 
+                // Response with success details
                 return Ok(new
                 {
                     Status = "Success",
@@ -75,6 +90,7 @@ namespace Bookstore.API.Controllers
             }
             catch (Exception ex)
             {
+                // Error log aur client ko message
                 _logger.LogError(ex, "Admin registration failed for {Email}", request.Email);
                 return BadRequest(new
                 {
@@ -86,6 +102,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
+        // Admin login karne ke liye API
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(AdminLoginDto request)
@@ -94,12 +111,15 @@ namespace Bookstore.API.Controllers
             {
                 _logger.LogInformation("Login attempt from: {Email}", request.Email);
 
+                // Login service call
                 var admin = await _authService.Login(request.Email.Trim().ToLower(), request.Password);
                 _logger.LogInformation("Successful login for admin ID: {AdminId}", admin.Id);
 
+                // Token generate karna
                 var accessToken = _tokenService.CreateToken(admin);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
+                // Refresh token DB me save karna
                 await _refreshTokenRepo.CreateAsync(new RefreshToken
                 {
                     Token = refreshToken,
@@ -109,13 +129,14 @@ namespace Bookstore.API.Controllers
                 });
                 _logger.LogInformation("Refresh token saved for admin {AdminId}", admin.Id);
 
+                // Response with token and user info
                 return Ok(new
                 {
                     Status = "Success",
                     Data = new
                     {
                         AdminInfo = new { admin.Id, admin.Email },
-                        Tokens = new { accessToken, refreshToken, ExpiresIn = 1800 }
+                        Tokens = new { accessToken, refreshToken, ExpiresIn = 1800 } // 30 mins
                     },
                     Timestamp = DateTime.UtcNow
                 });
@@ -132,6 +153,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
+        // Token refresh karne ke liye API
         [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
@@ -140,9 +162,10 @@ namespace Bookstore.API.Controllers
             {
                 _logger.LogInformation("Admin token refresh attempt");
 
+                // Expired token se user ka claim nikalna
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
 
-                // Validate user type claim
+                // UserType check karna (sirf Admin allowed)
                 var userTypeClaim = principal.FindFirst("UserType")?.Value;
                 if (userTypeClaim != "Admin")
                 {
@@ -150,7 +173,7 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid token type for admin");
                 }
 
-                // User identification
+                // Admin ID nikalna token se
                 var adminIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ??
                                  principal.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -160,7 +183,7 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid admin identifier in token");
                 }
 
-                // Validate refresh token
+                // Refresh token validate karna
                 var storedToken = await _refreshTokenRepo.FindByTokenAsync(request.RefreshToken);
                 _logger.LogDebug("Refresh token validation: {TokenId} | User: {AdminId} | Type: {UserType} | Expires: {Expires}",
                     storedToken?.Id, storedToken?.UserId, storedToken?.UserType, storedToken?.Expires);
@@ -174,11 +197,11 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid or expired refresh token");
                 }
 
-                // Token rotation
+                // New token banana (token rotation)
                 var newAccessToken = _tokenService.CreateToken(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-                // Update tokens
+                // Old refresh token delete karna aur naya add karna
                 await _refreshTokenRepo.DeleteAsync(storedToken.Id);
                 await _refreshTokenRepo.CreateAsync(new RefreshToken
                 {
@@ -190,6 +213,7 @@ namespace Bookstore.API.Controllers
 
                 _logger.LogInformation("Tokens refreshed successfully for admin {AdminId}", adminId);
 
+                // Success response
                 return Ok(new
                 {
                     Status = "TokenRefreshed",

@@ -1,15 +1,15 @@
 ﻿<!-- 
-  Ye project file hai .NET web project ke liye. 
-  Isme SDK type "Microsoft.NET.Sdk.Web" use ho raha hai, 
-  jo ASP.NET Core web applications ke liye hota hai.
+  Ye project file hai .NET web application ke liye.
+  Isme "Microsoft.NET.Sdk.Web" ka SDK use ho raha hai 
+  jo ASP.NET Core ke liye hota hai.
 -->
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<!-- 
-	  PropertyGroup ke andar basic configuration hoti hai.
+	  PropertyGroup ke andar project ki basic settings di gayi hain:
 	  - TargetFramework: .NET 6 ka use ho raha hai
-	  - LangVersion: C# ka latest version use kar rahe hain
-	  - Nullable: nullable reference types enable kiya gaya hai
+	  - LangVersion: C# ka latest version use ho raha hai
+	  - Nullable: Nullable reference types enable hain (warnings milti hain agar null ho sakta ho)
 	-->
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
@@ -18,25 +18,24 @@
 	</PropertyGroup>
 
 	<!-- 
-	  Ye ItemGroup hai jisme required NuGet packages list kiye gaye hain.
-	  Ye packages project ko alag-alag functionality dete hain.
+	  Is ItemGroup ke andar project me use hone wale NuGet packages list kiye gaye hain.
+	  Ye packages alag-alag kaam ke liye use hote hain.
 	-->
 	<ItemGroup>
 		<!-- 
-		  JWT Authentication ke liye
-		  (User login/authentication securely karne ke liye use hota hai)
+		  JWT Authentication ke liye (Login ke time token generate/check karne ke liye)
 		-->
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.0" />
 
 		<!-- 
-		  JSON serialization ke liye Newtonsoft.Json use karne ke liye 
-		  (Controllers mein JSON data handle karne ke liye useful)
+		  JSON handle karne ke liye Newtonsoft.Json use ho raha hai 
+		  (Controllers me JSON data parse/send karne ke liye helpful)
 		-->
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
 
 		<!-- 
-		  Entity Framework Core design-time tools ke liye 
-		  (jaise migration commands run karne ke liye)
+		  Entity Framework ka design time package 
+		  (jaise database migration run karne ke liye)
 		-->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0">
 			<PrivateAssets>all</PrivateAssets>
@@ -44,44 +43,39 @@
 		</PackageReference>
 
 		<!-- 
-		  Swagger documentation ke liye 
-		  (API ko browser mein test karne aur samajhne ke liye use hota hai)
+		  Swagger ka use API ko test aur samajhne ke liye hota hai (browser me API dikhai deti hai)
 		-->
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 
 		<!-- 
-		  Configuration settings ko manage karne ke liye 
-		  (jaise appsettings.json file ko read karne ke liye)
+		  Configuration (jaise appsettings.json file) ko read karne ke liye
 		-->
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
 
 		<!-- 
-		  JWT aur Token handling ke liye security packages 
-		  (JWT create/validate karne ke liye use hote hain)
+		  JWT tokens create/validate karne ke liye ye security related packages use ho rahe hain
 		-->
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.32.0" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.32.0" />
 
 		<!-- 
-		  Password hashing ke liye BCrypt use kiya gaya hai 
-		  (secure password store/verify karne ke liye)
+		  BCrypt ka use password ko securely hash/store karne ke liye hota hai
 		-->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 	</ItemGroup>
 
 	<!-- 
-	  Ye dusra ItemGroup hai jisme project ke andar ke aur 
-	  custom projects ko reference kiya gaya hai.
-	  Jaise ki Business layer aur Data layer.
+	  Is ItemGroup me internal project references diye gaye hain.
+	  Jaise Business aur Data layers ke projects ko link kiya gaya hai.
 	-->
 	<ItemGroup>
-		<!-- Business logic wala project reference -->
+		<!-- Business logic wala project include kiya gaya hai -->
 		<ProjectReference Include="..\Bookstore.Business\Bookstore.Business.csproj" />
 
-		<!-- Data access layer wala project reference -->
+		<!-- Data access wala project include kiya gaya hai -->
 		<ProjectReference Include="..\Bookstore.Data\Bookstore.Data.csproj" />
 
-		<!-- Yaha aur bhi references add kiye ja sakte hain agar required ho -->
+		<!-- Agar aur bhi layer ya modules ho to unka bhi reference yaha diya ja sakta hai -->
 	</ItemGroup>
 
 </Project>
