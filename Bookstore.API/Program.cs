@@ -16,15 +16,61 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Service Registrations
 builder.Services.AddControllers();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// JWT Authentication
+// Database Configuration with Conditional Logging
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    // Enable detailed SQL logging only in Development environment
+    if (builder.Environment.IsDevelopment())
+    {
+        options.LogTo(
+            message => Console.WriteLine($"DB Query: {message}"), // Format log messages
+            LogLevel.Information // Options: Trace, Debug, Information, Warning, Error
+        )
+        .EnableDetailedErrors(); // Show detailed error messages
+    }
+});
+
+// Enhanced Validation Response Configuration
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(e => e.Value.Errors.Count > 0)
+            .SelectMany(kvp => kvp.Value.Errors
+                .Select(e => new
+                {
+                    Field = kvp.Key,
+                    Message = !string.IsNullOrEmpty(e.ErrorMessage)
+                        ? e.ErrorMessage
+                        : "Invalid value format"
+                }))
+            .ToList();
+
+        return new BadRequestObjectResult(new
+        {
+            Status = "ValidationError",
+            Errors = errors,
+            Solution = "Check validation rules for each field"
+        });
+    };
+});
+
+// JWT Authentication (Fixed Claim Mapping)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -37,7 +83,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            NameClaimType = JwtRegisteredClaimNames.Sub,
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
@@ -85,6 +133,26 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Content Type Validation Middleware
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/swagger"), appBuilder =>
+{
+    appBuilder.Use(async (context, next) =>
+    {
+        if (!context.Request.HasJsonContentType())
+        {
+            context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                Status = "Error",
+                Message = "Request must be in JSON format",
+                SupportedTypes = new[] { "application/json" }
+            });
+            return;
+        }
+        await next();
+    });
+});
+
 // Error Handling Middleware
 app.UseExceptionHandler(errorApp =>
 {
@@ -92,16 +160,22 @@ app.UseExceptionHandler(errorApp =>
     {
         context.Response.ContentType = "application/json";
         var error = context.Features.Get<IExceptionHandlerFeature>();
+
         await context.Response.WriteAsJsonAsync(new
         {
             StatusCode = context.Response.StatusCode,
-            Message = error?.Error.Message ?? "An unexpected error occurred",
-            Details = app.Environment.IsDevelopment() ? error?.Error.StackTrace : null
+            Message = "Request processing failed",
+            Detailed = app.Environment.IsDevelopment() ? error?.Error.Message : null,
+            Solutions = new[] {
+                "Check input format",
+                "Verify required fields",
+                "Review API documentation"
+            }
         });
     });
 });
 
-// Development Configuration
+// Swagger Configuration (Development Only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -109,10 +183,11 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bookstore API v1");
         c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Bookstore API Documentation";
     });
 }
 
-// Middleware Pipeline
+// Pipeline Configuration
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();

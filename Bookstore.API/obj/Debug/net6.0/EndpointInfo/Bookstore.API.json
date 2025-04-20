@@ -5,7 +5,7 @@
     "version": "v1"
   },
   "paths": {
-    "/api/AdminAuth/register": {
+    "/AdminAuth/register": {
       "post": {
         "tags": [
           "AdminAuth"
@@ -36,7 +36,7 @@
         }
       }
     },
-    "/api/AdminAuth/login": {
+    "/AdminAuth/login": {
       "post": {
         "tags": [
           "AdminAuth"
@@ -67,7 +67,7 @@
         }
       }
     },
-    "/api/AdminAuth/forgot-password": {
+    "/AdminAuth/forgot-password": {
       "post": {
         "tags": [
           "AdminAuth"
@@ -98,7 +98,7 @@
         }
       }
     },
-    "/api/AdminAuth/reset-password": {
+    "/AdminAuth/reset-password": {
       "post": {
         "tags": [
           "AdminAuth"
@@ -129,7 +129,7 @@
         }
       }
     },
-    "/api/AdminAuth/refresh-token": {
+    "/AdminAuth/refresh-token": {
       "post": {
         "tags": [
           "AdminAuth"
@@ -160,7 +160,7 @@
         }
       }
     },
-    "/api/AdminManagement": {
+    "/AdminManagement": {
       "get": {
         "tags": [
           "AdminManagement"
@@ -201,7 +201,7 @@
         }
       }
     },
-    "/api/AdminManagement/{id}": {
+    "/AdminManagement/{id}": {
       "get": {
         "tags": [
           "AdminManagement"
@@ -285,7 +285,7 @@
         }
       }
     },
-    "/api/Users": {
+    "/Users": {
       "get": {
         "tags": [
           "Users"
@@ -297,7 +297,7 @@
         }
       }
     },
-    "/api/Users/{id}": {
+    "/Users/{id}": {
       "get": {
         "tags": [
           "Users"
@@ -320,7 +320,7 @@
         }
       }
     },
-    "/api/Users/register": {
+    "/Users/register": {
       "post": {
         "tags": [
           "Users"
@@ -351,7 +351,7 @@
         }
       }
     },
-    "/api/Users/login": {
+    "/Users/login": {
       "post": {
         "tags": [
           "Users"
@@ -382,7 +382,7 @@
         }
       }
     },
-    "/api/Users/refresh-token": {
+    "/Users/refresh-token": {
       "post": {
         "tags": [
           "Users"
@@ -413,7 +413,7 @@
         }
       }
     },
-    "/api/Users/forgot-password": {
+    "/Users/forgot-password": {
       "post": {
         "tags": [
           "Users"
@@ -444,7 +444,7 @@
         }
       }
     },
-    "/api/Users/reset-password": {
+    "/Users/reset-password": {
       "post": {
         "tags": [
           "Users"
@@ -591,11 +591,13 @@
           "firstName": {
             "maxLength": 50,
             "minLength": 2,
+            "pattern": "^[A-Za-z]+$",
             "type": "string"
           },
           "lastName": {
             "maxLength": 50,
             "minLength": 2,
+            "pattern": "^[A-Za-z]+$",
             "type": "string"
           },
           "email": {
@@ -700,11 +702,13 @@
           "firstName": {
             "maxLength": 50,
             "minLength": 2,
+            "pattern": "^[a-zA-Z]+$",
             "type": "string"
           },
           "lastName": {
             "maxLength": 50,
             "minLength": 2,
+            "pattern": "^[a-zA-Z]+$",
             "type": "string"
           },
           "email": {
@@ -713,8 +717,8 @@
             "format": "email"
           },
           "password": {
-            "minLength": 8,
-            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",
+            "minLength": 1,
+            "pattern": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,}$",
             "type": "string"
           },
           "role": {

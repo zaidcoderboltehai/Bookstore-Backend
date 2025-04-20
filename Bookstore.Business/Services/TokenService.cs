@@ -14,61 +14,104 @@ namespace Bookstore.Business.Services
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
+        private readonly SymmetricSecurityKey _signingKey;
 
         public TokenService(IConfiguration config)
         {
-            _config = config;
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _signingKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
         }
 
         public string CreateToken(dynamic entity)
         {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity), "Entity cannot be null for token creation");
+
+            if (entity?.Id == null)
+                throw new ArgumentException("Entity must have a valid ID", nameof(entity.Id));
+
             var claims = new List<Claim>
             {
+                // Dual claim mapping for compatibility
                 new Claim(JwtRegisteredClaimNames.Sub, entity.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, entity.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, entity.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role, entity is Admin ? "Admin" : "User"),
-                new Claim("FullName", $"{entity.FirstName} {entity.LastName}")
+                new Claim(ClaimTypes.Role, GetEntityRole(entity)),
+                new Claim("UserType", GetEntityRole(entity)), // Added UserType claim
+                new Claim("FullName", $"{entity.FirstName} {entity.LastName}"),
+                new Claim("EntityType", entity.GetType().Name),
+                new Claim("AuditStamp", DateTime.UtcNow.ToString("yyyyMMddHHmmss"))
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                SigningCredentials = new SigningCredentials(
+                    _signingKey,
+                    SecurityAlgorithms.HmacSha512Signature),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                NotBefore = DateTime.UtcNow
+            };
 
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds
-            );
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return tokenHandler.WriteToken(token);
         }
 
         public string GenerateRefreshToken()
         {
-            var randomNumber = new byte[32];
             using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
+            var randomBytes = new byte[64];
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
         }
 
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = true,
-                ValidateIssuer = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(_config["Jwt:Key"])),
-                ValidIssuer = _config["Jwt:Issuer"],
-                ValidAudience = _config["Jwt:Audience"],
-                ValidateLifetime = false
-            };
-
             var tokenHandler = new JwtSecurityTokenHandler();
-            return tokenHandler.ValidateToken(token, tokenValidationParameters, out _);
+
+            try
+            {
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = _config["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _config["Jwt:Audience"],
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(_config["Jwt:Key"])),
+                    ValidateLifetime = false,
+                    ClockSkew = TimeSpan.Zero,
+                    NameClaimType = JwtRegisteredClaimNames.Sub,
+                    RoleClaimType = ClaimTypes.Role
+                };
+
+                return tokenHandler.ValidateToken(token, validationParameters, out _);
+            }
+            catch (SecurityTokenValidationException ex)
+            {
+                throw new SecurityTokenException("Invalid token structure", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityTokenException("Token validation failed", ex);
+            }
+        }
+
+        private string GetEntityRole(dynamic entity)
+        {
+            return entity switch
+            {
+                Admin => "Admin",
+                User => "User",
+                _ => throw new InvalidOperationException("Unsupported entity type")
+            };
         }
     }
 }

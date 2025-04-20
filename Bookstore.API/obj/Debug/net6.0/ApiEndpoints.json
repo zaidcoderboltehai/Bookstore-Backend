@@ -2,7 +2,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "ForgotPassword",
-    "RelativePath": "api/AdminAuth/forgot-password",
+    "RelativePath": "AdminAuth/forgot-password",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -18,7 +18,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "Login",
-    "RelativePath": "api/AdminAuth/login",
+    "RelativePath": "AdminAuth/login",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -34,7 +34,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "RefreshToken",
-    "RelativePath": "api/AdminAuth/refresh-token",
+    "RelativePath": "AdminAuth/refresh-token",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -50,7 +50,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "Register",
-    "RelativePath": "api/AdminAuth/register",
+    "RelativePath": "AdminAuth/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -66,7 +66,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminAuthController",
     "Method": "ResetPassword",
-    "RelativePath": "api/AdminAuth/reset-password",
+    "RelativePath": "AdminAuth/reset-password",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -82,7 +82,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminManagementController",
     "Method": "GetAll",
-    "RelativePath": "api/AdminManagement",
+    "RelativePath": "AdminManagement",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -92,7 +92,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminManagementController",
     "Method": "Create",
-    "RelativePath": "api/AdminManagement",
+    "RelativePath": "AdminManagement",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -108,7 +108,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminManagementController",
     "Method": "Get",
-    "RelativePath": "api/AdminManagement/{id}",
+    "RelativePath": "AdminManagement/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -124,7 +124,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminManagementController",
     "Method": "Update",
-    "RelativePath": "api/AdminManagement/{id}",
+    "RelativePath": "AdminManagement/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
@@ -145,7 +145,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.AdminManagementController",
     "Method": "Delete",
-    "RelativePath": "api/AdminManagement/{id}",
+    "RelativePath": "AdminManagement/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -161,7 +161,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "GetAll",
-    "RelativePath": "api/Users",
+    "RelativePath": "Users",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -171,7 +171,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "GetById",
-    "RelativePath": "api/Users/{id}",
+    "RelativePath": "Users/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -187,7 +187,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "ForgotPassword",
-    "RelativePath": "api/Users/forgot-password",
+    "RelativePath": "Users/forgot-password",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -203,7 +203,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "Login",
-    "RelativePath": "api/Users/login",
+    "RelativePath": "Users/login",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -219,7 +219,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "RefreshToken",
-    "RelativePath": "api/Users/refresh-token",
+    "RelativePath": "Users/refresh-token",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -235,7 +235,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "Register",
-    "RelativePath": "api/Users/register",
+    "RelativePath": "Users/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -251,7 +251,7 @@
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "ResetPassword",
-    "RelativePath": "api/Users/reset-password",
+    "RelativePath": "Users/reset-password",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,

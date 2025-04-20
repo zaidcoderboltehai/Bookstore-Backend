@@ -4,13 +4,14 @@ using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
 using Bookstore.API.Models;
 using Bookstore.Business.Interfaces;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Bookstore.API.Controllers
 {
@@ -24,19 +25,22 @@ namespace Bookstore.API.Controllers
         private readonly ITokenService _tokenService;
         private readonly IForgotPasswordService _forgotService;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
+        private readonly IHostEnvironment _environment;
 
         public UsersController(
             IUserRepository repo,
             IUserAuthService authService,
             ITokenService tokenService,
             IForgotPasswordService forgotService,
-            IRefreshTokenRepository refreshTokenRepo)
+            IRefreshTokenRepository refreshTokenRepo,
+            IHostEnvironment environment)
         {
             _repo = repo;
             _authService = authService;
             _tokenService = tokenService;
             _forgotService = forgotService;
             _refreshTokenRepo = refreshTokenRepo;
+            _environment = environment;
         }
 
         [HttpGet]
@@ -62,6 +66,7 @@ namespace Bookstore.API.Controllers
             var user = await _repo.GetUserByIdAsync(id);
             if (user == null) return NotFound(new
             {
+                Status = "NotFound",
                 Error = "User not found",
                 Id = id
             });
@@ -92,9 +97,6 @@ namespace Bookstore.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new { Errors = ModelState.Values.SelectMany(v => v.Errors) });
-
             try
             {
                 var user = new User
@@ -106,20 +108,28 @@ namespace Bookstore.API.Controllers
                 };
 
                 await _authService.Register(user, dto.Password);
+                AuditLog($"User registered: {user.Email}");
+
                 return Ok(new
                 {
                     Status = "Success",
-                    Message = "Registration successful",
-                    NextSteps = "Proceed to login"
+                    UserId = user.Id,
+                    NextSteps = new[] {
+                        "Check email for verification",
+                        "Login with credentials"
+                    }
                 });
             }
             catch (Exception ex)
             {
+                AuditLog($"Registration failed: {ex.Message}");
                 return Conflict(new
                 {
                     Status = "Error",
-                    ErrorCode = "RegistrationFailed",
-                    Details = ex.Message
+                    ErrorType = "RegistrationError",
+                    UserMessage = "Registration failed. Please check your details.",
+                    Technical = _environment.IsDevelopment() ? ex.Message : null,
+                    ErrorCode = "USER-REG-100"
                 });
             }
         }
@@ -128,12 +138,11 @@ namespace Bookstore.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new { Errors = ModelState.Values.SelectMany(v => v.Errors) });
-
             try
             {
+                AuditLog($"Login attempt: {dto.Email}");
                 var user = await _authService.Login(dto.Email, dto.Password);
+
                 var accessToken = _tokenService.CreateToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -145,6 +154,8 @@ namespace Bookstore.API.Controllers
                     UserType = "User"
                 });
 
+                AuditLog($"Successful login: {user.Id}");
+
                 return Ok(new
                 {
                     Status = "Authenticated",
@@ -155,17 +166,20 @@ namespace Bookstore.API.Controllers
                     {
                         user.Id,
                         user.Email,
-                        user.Role
+                        user.Role,
+                        FullName = $"{user.FirstName} {user.LastName}"
                     }
                 });
             }
             catch (Exception ex)
             {
+                AuditLog($"Login failed: {dto.Email} - {ex.Message}");
                 return Unauthorized(new
                 {
-                    Status = "Unauthorized",
-                    ErrorCode = "InvalidCredentials",
-                    Details = ex.Message
+                    Status = "AuthFailed",
+                    UserMessage = "Invalid email/password",
+                    DebugInfo = _environment.IsDevelopment() ? ex.Message : null,
+                    ErrorCode = "USER-AUTH-200"
                 });
             }
         }
@@ -176,13 +190,40 @@ namespace Bookstore.API.Controllers
         {
             try
             {
+                AuditLog($"Refresh token attempt from: {Request.HttpContext.Connection.RemoteIpAddress}");
+
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
-                var userId = int.Parse(principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
 
+                // Validate user type
+                var userTypeClaim = principal.FindFirst("UserType")?.Value;
+                if (userTypeClaim != "User")
+                {
+                    AuditLog($"Invalid user type attempt: {userTypeClaim}");
+                    throw new SecurityTokenException("Invalid token type for user");
+                }
+
+                // Validate user ID
+                var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ??
+                                principal.FindFirst(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(userIdClaim?.Value, out var userId))
+                {
+                    AuditLog("Invalid user ID format in token");
+                    throw new SecurityTokenException("Invalid user identifier");
+                }
+
+                // Validate refresh token
                 var storedToken = await _refreshTokenRepo.FindByTokenAsync(request.RefreshToken);
-                if (storedToken == null || storedToken.UserId != userId || storedToken.IsExpired)
-                    throw new SecurityTokenException("Invalid token combination");
+                if (storedToken == null ||
+                    storedToken.UserId != userId ||
+                    storedToken.UserType != "User" ||
+                    storedToken.Expires < DateTime.UtcNow)
+                {
+                    AuditLog($"Invalid refresh token for user {userId}");
+                    throw new SecurityTokenException("Invalid or expired refresh token");
+                }
 
+                // Rotate tokens
                 var newAccessToken = _tokenService.CreateToken(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
@@ -195,30 +236,41 @@ namespace Bookstore.API.Controllers
                     UserType = "User"
                 });
 
+                AuditLog($"Tokens refreshed for user {userId}");
+
                 return Ok(new
                 {
                     Status = "TokenRefreshed",
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken,
-                    ExpiresIn = 1800
+                    ExpiresIn = 1800,
+                    UserInfo = new
+                    {
+                        UserId = userId,
+                        UserType = "User"
+                    }
                 });
             }
             catch (SecurityTokenException ex)
             {
+                AuditLog($"Token error: {ex.Message}");
                 return Unauthorized(new
                 {
-                    Status = "InvalidToken",
-                    ErrorCode = "TokenValidationFailed",
-                    Details = ex.Message
+                    Status = "TokenError",
+                    ErrorCode = "TOKEN-1001",
+                    UserMessage = "Invalid token",
+                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
                 });
             }
             catch (Exception ex)
             {
+                AuditLog($"Refresh token failure: {ex}");
                 return StatusCode(500, new
                 {
-                    Status = "Error",
-                    ErrorCode = "TokenRefreshFailed",
-                    Details = ex.Message
+                    Status = "ServerError",
+                    ErrorCode = "SRV-1001",
+                    UserMessage = "Token refresh failed",
+                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
                 });
             }
         }
@@ -227,41 +279,39 @@ namespace Bookstore.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 await _forgotService.SendUserForgotPasswordLink(dto.Email);
+                AuditLog($"Password reset requested: {dto.Email}");
+
                 return Ok(new
                 {
                     Status = "InstructionsSent",
-                    Message = "Check email for reset link",
                     Validity = "1 hour"
                 });
             }
             catch (Exception ex)
             {
+                AuditLog($"Password reset failed: {dto.Email} - {ex.Message}");
                 return NotFound(new
                 {
-                    Status = "Error",
-                    ErrorCode = "EmailNotFound",
-                    Details = ex.Message
+                    Status = "NotFound",
+                    UserMessage = "Email not registered",
+                    Technical = _environment.IsDevelopment() ? ex.Message : null,
+                    Solution = "Check email or register"
                 });
             }
         }
 
-        // ✅ New Password Set करना
         [HttpPost("reset-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 await _forgotService.ResetPassword(dto.Token, dto.NewPassword);
+                AuditLog($"Password reset successful for token: {dto.Token}");
+
                 return Ok(new
                 {
                     Status = "PasswordReset",
@@ -271,13 +321,20 @@ namespace Bookstore.API.Controllers
             }
             catch (Exception ex)
             {
+                AuditLog($"Password reset failed: {dto.Token} - {ex.Message}");
                 return BadRequest(new
                 {
                     Status = "Error",
-                    ErrorCode = "InvalidToken",
-                    Details = ex.Message
+                    ErrorCode = "TOKEN-1002",
+                    UserMessage = "Invalid reset token",
+                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
                 });
             }
+        }
+
+        private void AuditLog(string message)
+        {
+            Console.WriteLine($"[AUDIT] {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - {message}");
         }
     }
 }
