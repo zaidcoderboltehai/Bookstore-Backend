@@ -4,99 +4,167 @@ using Bookstore.Business.Interfaces;
 using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using BCrypt.Net; // ✅ सही namespace
 
 namespace Bookstore.Business.Services
 {
     public class ForgotPasswordService : IForgotPasswordService
     {
-        private readonly IUserRepository _userRepo; // User repository ka reference
-        private readonly IAdminRepository _adminRepo; // Admin repository ka reference
-        private readonly IPasswordResetRepository _resetRepo; // Password reset repository ka reference
-        private readonly IConfiguration _config; // Configuration se settings lene ke liye
+        private readonly IUserRepository _userRepo;
+        private readonly IAdminRepository _adminRepo;
+        private readonly IPasswordResetRepository _resetRepo;
+        private readonly IConfiguration _config;
+        private readonly ILogger<ForgotPasswordService> _logger;
 
-        // Constructor: Jab ForgotPasswordService banayi jaati hai, toh yeh dependencies inject ki jaati hain
         public ForgotPasswordService(
-            IUserRepository userRepo, // User repository ka reference
-            IAdminRepository adminRepo, // Admin repository ka reference
-            IPasswordResetRepository resetRepo, // Password reset repository ka reference
-            IConfiguration config) // Configuration settings ko read karne ke liye
+            IUserRepository userRepo,
+            IAdminRepository adminRepo,
+            IPasswordResetRepository resetRepo,
+            IConfiguration config,
+            ILogger<ForgotPasswordService> logger)
         {
-            _userRepo = userRepo; // _userRepo ko initialize kar rahe hain
-            _adminRepo = adminRepo; // _adminRepo ko initialize kar rahe hain
-            _resetRepo = resetRepo; // _resetRepo ko initialize kar rahe hain
-            _config = config; // _config ko initialize kar rahe hain
+            _userRepo = userRepo;
+            _adminRepo = adminRepo;
+            _resetRepo = resetRepo;
+            _config = config;
+            _logger = logger;
         }
 
-        // User ke liye password reset link bhejne ki method
         public async Task SendUserForgotPasswordLink(string email)
         {
-            if (!await _userRepo.UserExists(email)) // Agar user nahi milta, toh error throw karega
-                throw new InvalidOperationException("User not found");
-
-            var token = Guid.NewGuid(); // Unique token generate kar rahe hain
-            var reset = new PasswordReset // Password reset ka record banaya jaa raha hai
+            try
             {
-                Token = token, // Token ko set kiya
-                Email = email, // User ka email set kiya
-                ExpiryUtc = DateTime.UtcNow.AddHours(1) // Token ka expiry time set kiya
-            };
-            await _resetRepo.CreateAsync(reset); // Reset record ko database mein save kiya
+                _logger.LogInformation("User password reset requested for {Email}", email);
 
-            var frontUrl = _config["Frontend:ResetPasswordUrl"]; // Frontend URL ko config se liya
-            var link = $"{frontUrl}?token={token}"; // Reset password link banayi jaa rahi hai
-            // TODO: Email bhejne ka logic implement karna hai yahan
+                var user = await _userRepo.GetUserByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found: {Email}", email);
+                    throw new InvalidOperationException("User not found");
+                }
+
+                var token = Guid.NewGuid();
+                await CreatePasswordResetRecord(email, token);
+
+                var resetLink = GenerateResetLink(token, "user");
+                LogResetLink(email, resetLink);
+
+                // TODO: Implement email service
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in user password reset for {Email}", email);
+                throw;
+            }
         }
 
-        // Admin ke liye password reset link bhejne ki method
         public async Task SendAdminForgotPasswordLink(string email, string secretKey)
         {
-            if (secretKey != _config["AdminSecretKey"]) // Agar secret key match nahi karti, toh error throw karega
-                throw new UnauthorizedAccessException("Invalid SecretKey");
-
-            if (!await _adminRepo.AdminExists(email)) // Agar admin nahi milta, toh error throw karega
-                throw new InvalidOperationException("Admin not found");
-
-            var token = Guid.NewGuid(); // Unique token generate kar rahe hain
-            var reset = new PasswordReset // Password reset record banaya jaa raha hai
+            try
             {
-                Token = token, // Token ko set kiya
-                Email = email, // Admin ka email set kiya
-                ExpiryUtc = DateTime.UtcNow.AddHours(1) // Token ka expiry time set kiya
-            };
-            await _resetRepo.CreateAsync(reset); // Reset record ko database mein save kiya
+                _logger.LogInformation("Admin password reset requested for {Email}", email);
 
-            var frontUrl = _config["Frontend:ResetPasswordUrl"]; // Frontend URL ko config se liya
-            var link = $"{frontUrl}?token={token}"; // Reset password link banayi jaa rahi hai
-            // TODO: Email bhejne ka logic implement karna hai yahan
+                if (secretKey != _config["AdminSecretKey"])
+                {
+                    _logger.LogWarning("Invalid secret key attempt for admin: {Email}", email);
+                    throw new UnauthorizedAccessException("Invalid admin credentials");
+                }
+
+                var admin = await _adminRepo.GetByEmail(email);
+                if (admin == null)
+                {
+                    _logger.LogWarning("Admin not found: {Email}", email);
+                    throw new InvalidOperationException("Admin not found");
+                }
+
+                var token = Guid.NewGuid();
+                await CreatePasswordResetRecord(email, token);
+
+                var resetLink = GenerateResetLink(token, "admin");
+                LogResetLink(email, resetLink);
+
+                // TODO: Implement email service
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin password reset for {Email}", email);
+                throw;
+            }
         }
 
-        // Password reset karne ki method
         public async Task ResetPassword(Guid token, string newPassword)
         {
-            var record = await _resetRepo.GetByTokenAsync(token) // Token se reset record ko fetch kar rahe hain
-                ?? throw new InvalidOperationException("Invalid or expired token"); // Agar record nahi milta, toh error throw karega
-
-            if (record.ExpiryUtc < DateTime.UtcNow) // Agar token expire ho gaya ho, toh error throw karega
-                throw new InvalidOperationException("Token expired");
-
-            // Agar user ka record milta hai toh password update karenge
-            if (await _userRepo.UserExists(record.Email))
+            try
             {
-                var user = await _userRepo.GetUserByEmail(record.Email); // User ko email ke through fetch kar rahe hain
-                if (user == null) // Agar user nahi milta, toh error throw karega
-                    throw new InvalidOperationException("User not found");
+                _logger.LogInformation("Processing password reset for token: {Token}", token);
 
-                user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword); // Naya password hash kar rahe hain
-                await _userRepo.UpdateUserAsync(user); // User ka password update kar rahe hain
+                var record = await _resetRepo.GetByTokenAsync(token)
+                    ?? throw new InvalidOperationException("Invalid token");
+
+                if (record.ExpiryUtc < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Expired token: {Token}", token);
+                    throw new InvalidOperationException("Token expired");
+                }
+
+                await UpdatePassword(record.Email, newPassword);
+                await _resetRepo.DeleteAsync(record);
+
+                _logger.LogInformation("Password reset successful for {Email}", record.Email);
             }
-            else // Agar user nahi hai, toh admin ka password update karenge
+            catch (Exception ex)
             {
-                var admin = await _adminRepo.GetByEmail(record.Email); // Admin ko email ke through fetch kar rahe hain
-                admin.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12); // Admin ka password hash kar rahe hain
-                await _adminRepo.UpdateAdminAsync(admin); // Admin ka password update kar rahe hain
+                _logger.LogError(ex, "Password reset failed for token: {Token}", token);
+                throw;
+            }
+        }
+
+        private async Task CreatePasswordResetRecord(string email, Guid token)
+        {
+            await _resetRepo.CreateAsync(new PasswordReset
+            {
+                Token = token,
+                Email = email,
+                ExpiryUtc = DateTime.UtcNow.AddHours(1)
+            });
+        }
+
+        private string GenerateResetLink(Guid token, string userType)
+        {
+            var baseUrl = _config["Frontend:BaseUrl"];
+            return userType.ToLower() switch
+            {
+                "admin" => $"{baseUrl}/admin-reset-password?token={token}",
+                _ => $"{baseUrl}/reset-password?token={token}"
+            };
+        }
+
+        private async Task UpdatePassword(string email, string newPassword)
+        {
+            var user = await _userRepo.GetUserByEmail(email);
+            if (user != null)
+            {
+                // ✅ BCrypt.Net-Next के साथ EnhancedHashPassword
+                user.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12);
+                await _userRepo.UpdateUserAsync(user);
+                return;
             }
 
-            await _resetRepo.DeleteAsync(record); // Reset record ko delete kar rahe hain
+            var admin = await _adminRepo.GetByEmail(email);
+            if (admin != null)
+            {
+                admin.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12);
+                await _adminRepo.UpdateAdminAsync(admin);
+                return;
+            }
+
+            throw new InvalidOperationException("User not found");
+        }
+
+        private void LogResetLink(string email, string link)
+        {
+            _logger.LogDebug("Password Reset Link for {Email}: {Link}", email, link);
         }
     }
 }
