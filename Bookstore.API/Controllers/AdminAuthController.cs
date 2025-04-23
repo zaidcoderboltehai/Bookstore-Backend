@@ -26,7 +26,6 @@ namespace Bookstore.API.Controllers
         private readonly ILogger<AdminAuthController> _logger;
         private readonly IForgotPasswordService _forgotService;
 
-        // Constructor with Dependency Injection
         public AdminAuthController(
             IAdminAuthService authService,
             ITokenService tokenService,
@@ -43,7 +42,7 @@ namespace Bookstore.API.Controllers
             _forgotService = forgotService;
         }
 
-        // Admin Registration Endpoint
+        // ✅ Admin Registration with ExternalId for CSV
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register(AdminRegisterDto request)
@@ -54,54 +53,53 @@ namespace Bookstore.API.Controllers
 
                 var admin = new Admin
                 {
+                    ExternalId = Guid.NewGuid().ToString(), // Auto-generated GUID
                     FirstName = request.FirstName.Trim(),
                     LastName = request.LastName.Trim(),
                     Email = request.Email.ToLower().Trim(),
-                    SecretKey = request.SecretKey
+                    SecretKey = request.SecretKey,
+                    Role = "Admin"
                 };
 
                 var createdAdmin = await _authService.Register(admin, request.Password, request.SecretKey);
-                _logger.LogInformation("Admin registered successfully: {AdminId}", createdAdmin.Id);
+                _logger.LogInformation("Admin registered: ID {AdminId}", createdAdmin.Id);
 
                 return Ok(new
                 {
                     Status = "Success",
-                    AdminDetails = new
+                    Admin = new
                     {
                         createdAdmin.Id,
-                        createdAdmin.FirstName,
-                        createdAdmin.LastName,
+                        createdAdmin.ExternalId, // Return for CSV use
                         createdAdmin.Email,
-                        Role = "Admin"
+                        createdAdmin.FirstName,
+                        createdAdmin.LastName
                     },
-                    Message = "Admin account created successfully",
-                    NextSteps = new[] { "Check email for verification", "Login with credentials" }
+                    Message = "Admin created. Store ExternalId for CSV operations."
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Admin registration failed for {Email}", request.Email);
+                _logger.LogError(ex, "Admin registration failed");
                 return BadRequest(new
                 {
                     Status = "Error",
-                    UserMessage = "Registration failed. Check inputs.",
-                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null,
-                    ErrorCode = "REG-1001"
+                    UserMessage = "Check secret key/email format",
+                    ErrorCode = "ADMIN-REG-100",
+                    Debug = _environment.IsDevelopment() ? ex.Message : null
                 });
             }
         }
 
-        // Admin Login Endpoint
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(AdminLoginDto request)
         {
             try
             {
-                _logger.LogInformation("Login attempt from: {Email}", request.Email);
+                _logger.LogInformation("Login attempt: {Email}", request.Email);
 
                 var admin = await _authService.Login(request.Email.Trim().ToLower(), request.Password);
-                _logger.LogInformation("Successful login for admin ID: {AdminId}", admin.Id);
 
                 var accessToken = _tokenService.CreateToken(admin);
                 var refreshToken = _tokenService.GenerateRefreshToken();
@@ -113,17 +111,14 @@ namespace Bookstore.API.Controllers
                     UserId = admin.Id,
                     UserType = "Admin"
                 });
-                _logger.LogInformation("Refresh token saved for admin {AdminId}", admin.Id);
 
                 return Ok(new
                 {
-                    Status = "Success",
-                    Data = new
-                    {
-                        AdminInfo = new { admin.Id, admin.Email },
-                        Tokens = new { accessToken, refreshToken, ExpiresIn = 1800 }
-                    },
-                    Timestamp = DateTime.UtcNow
+                    Status = "AuthSuccess",
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresIn = 1800, // 30 minutes
+                    AdminId = admin.Id
                 });
             }
             catch (Exception ex)
@@ -131,56 +126,38 @@ namespace Bookstore.API.Controllers
                 _logger.LogError(ex, "Login failed for {Email}", request.Email);
                 return Unauthorized(new
                 {
-                    Status = "AuthError",
-                    UserMessage = "Invalid credentials",
-                    ErrorCode = "AUTH-1001"
+                    Status = "AuthFailed",
+                    ErrorCode = "ADMIN-LOGIN-200",
+                    Message = "Invalid email/password"
                 });
             }
         }
 
-        // Refresh Token Endpoint
         [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             try
             {
-                _logger.LogInformation("Admin token refresh attempt");
-
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
+                var userType = principal.FindFirst("UserType")?.Value;
 
-                var userTypeClaim = principal.FindFirst("UserType")?.Value;
-                if (userTypeClaim != "Admin")
-                {
-                    _logger.LogWarning("Invalid user type for admin refresh: {UserType}", userTypeClaim);
-                    throw new SecurityTokenException("Invalid token type for admin");
-                }
+                if (userType != "Admin")
+                    throw new SecurityTokenException("Invalid token type");
 
-                var adminIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ??
-                                 principal.FindFirst(ClaimTypes.NameIdentifier);
-
-                if (adminIdClaim == null || !int.TryParse(adminIdClaim.Value, out var adminId))
-                {
-                    _logger.LogWarning("Invalid token: Missing or invalid admin identifier");
-                    throw new SecurityTokenException("Invalid admin identifier in token");
-                }
+                var adminIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(adminIdClaim, out int adminId))
+                    throw new SecurityTokenException("Invalid admin ID");
 
                 var storedToken = await _refreshTokenRepo.FindByTokenAsync(request.RefreshToken);
-                _logger.LogDebug("Refresh token validation: {TokenId} | User: {AdminId} | Type: {UserType} | Expires: {Expires}",
-                    storedToken?.Id, storedToken?.UserId, storedToken?.UserType, storedToken?.Expires);
+                if (storedToken == null || storedToken.UserId != adminId || storedToken.IsExpired)
+                    throw new SecurityTokenException("Invalid/expired refresh token");
 
-                if (storedToken == null ||
-                    storedToken.UserId != adminId ||
-                    storedToken.UserType != "Admin" ||
-                    storedToken.Expires < DateTime.UtcNow)
-                {
-                    _logger.LogWarning("Invalid refresh token for admin {AdminId}", adminId);
-                    throw new SecurityTokenException("Invalid or expired refresh token");
-                }
-
+                // Generate new tokens
                 var newAccessToken = _tokenService.CreateToken(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
+                // Update refresh token
                 await _refreshTokenRepo.DeleteAsync(storedToken.Id);
                 await _refreshTokenRepo.CreateAsync(new RefreshToken
                 {
@@ -190,11 +167,8 @@ namespace Bookstore.API.Controllers
                     UserType = "Admin"
                 });
 
-                _logger.LogInformation("Tokens refreshed successfully for admin {AdminId}", adminId);
-
                 return Ok(new
                 {
-                    Status = "TokenRefreshed",
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken,
                     ExpiresIn = 1800
@@ -202,113 +176,72 @@ namespace Bookstore.API.Controllers
             }
             catch (SecurityTokenException ex)
             {
-                _logger.LogError(ex, "Token validation failed");
+                _logger.LogError(ex, "Token refresh failed");
                 return Unauthorized(new
                 {
                     Status = "TokenError",
-                    UserMessage = ex.Message,
-                    ErrorCode = "TOKEN-1001"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Token refresh failure");
-                return StatusCode(500, new
-                {
-                    Status = "ServerError",
-                    UserMessage = "Refresh failed",
-                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null,
-                    ErrorCode = "SRV-1001"
+                    ErrorCode = "TOKEN-100",
+                    Message = ex.Message
                 });
             }
         }
 
-        // Forgot Password Endpoint
         [AllowAnonymous]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
         {
             try
             {
-                _logger.LogInformation("Admin password reset requested for {Email}", dto.Email);
-
                 await _forgotService.SendAdminForgotPasswordLink(dto.Email, dto.SecretKey);
-
                 return Ok(new
                 {
                     Status = "InstructionsSent",
-                    Validity = "1 hour",
-                    Message = "Check admin email for reset instructions"
+                    Message = "Check email for reset link (valid 1h)"
                 });
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogError(ex, "Invalid secret key for admin password reset");
-                return Unauthorized(new
-                {
-                    Status = "AuthError",
-                    ErrorCode = "ADMIN-AUTH-300",
-                    UserMessage = "Invalid admin credentials"
-                });
+                return Unauthorized(new { ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Admin not found for password reset");
-                return NotFound(new
-                {
-                    Status = "NotFound",
-                    ErrorCode = "ADMIN-AUTH-301",
-                    UserMessage = "Admin account not found"
-                });
+                return NotFound(new { ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Admin password reset failure");
+                _logger.LogError(ex, "Password reset failed");
                 return StatusCode(500, new
                 {
                     Status = "ServerError",
-                    ErrorCode = "ADMIN-AUTH-302",
-                    UserMessage = "Password reset failed"
+                    Message = "Internal error. Try later."
                 });
             }
         }
 
-        // Reset Password Endpoint
         [AllowAnonymous]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
             try
             {
-                _logger.LogInformation("Admin password reset attempt for token: {Token}", dto.Token);
-
                 await _forgotService.ResetPassword(dto.Token, dto.NewPassword);
-
                 return Ok(new
                 {
                     Status = "PasswordReset",
-                    Message = "Admin password updated successfully",
-                    NextSteps = new[] { "Login with new credentials" }
+                    Message = "Login with new password"
                 });
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Invalid reset token for admin");
-                return BadRequest(new
-                {
-                    Status = "TokenError",
-                    ErrorCode = "ADMIN-AUTH-400",
-                    UserMessage = "Invalid or expired reset token"
-                });
+                return BadRequest(new { ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Admin password reset error");
+                _logger.LogError(ex, "Password reset error");
                 return StatusCode(500, new
                 {
                     Status = "ServerError",
-                    ErrorCode = "ADMIN-AUTH-401",
-                    UserMessage = "Password reset failed"
+                    Message = "Reset failed. Contact support."
                 });
             }
         }

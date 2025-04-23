@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations; // Data validation ke liye necessary namespace
+﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Bookstore.Data.Entities
 {
@@ -23,5 +24,8 @@ namespace Bookstore.Data.Entities
 
         [Required] // Yeh annotation 'Role' ko required banaata hai, jo user ka role specify karega
         public string Role { get; set; } = "User"; // User ka role. Default value "User" set kiya gaya hai
+
+        // ✅ Added navigation property for Cart relationship
+        public ICollection<Cart> Carts { get; set; } = new List<Cart>();
     }
 }

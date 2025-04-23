@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Bookstore.Data.Entities
 {
@@ -24,5 +25,8 @@ namespace Bookstore.Data.Entities
         // Link to Admin who added the book
         public int AdminId { get; set; }
         public Admin? Admin { get; set; }
+
+        // ✅ Added navigation property for Cart relationship
+        public ICollection<Cart> Carts { get; set; } = new List<Cart>();
     }
 }

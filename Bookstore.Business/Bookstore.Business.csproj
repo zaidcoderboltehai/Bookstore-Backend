@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<!-- Yeh section .NET 6 compatible packages ko define karta hai jo project ke liye necessary hain -->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="CsvHelper" Version="33.0.1" />
 		<!-- BCrypt.Net-Next: Password hashing ke liye ek popular library -->
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
 		<!-- Configuration ko manage karne ke liye required library -->

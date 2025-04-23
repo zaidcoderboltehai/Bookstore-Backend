@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace Bookstore.API.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IBookService _bookService;
+        private const int PageSize = 5; // Set page size to 5 as requested
 
         public BooksController(IBookService bookService)
         {
@@ -50,6 +52,34 @@ namespace Bookstore.API.Controllers
         {
             await _bookService.DeleteBookAsync(id);
             return NoContent();
+        }
+
+        // New Pagination Endpoint
+        [HttpGet("page/{pageNumber}")]
+        public async Task<IActionResult> GetBooksByPage(int pageNumber)
+        {
+            if (pageNumber < 1)
+            {
+                return BadRequest("Page number must be greater than 0");
+            }
+
+            var allBooks = await _bookService.GetAllBooksAsync();
+            var totalBooks = allBooks.Count();
+            var totalPages = (int)Math.Ceiling(totalBooks / (double)PageSize);
+
+            var books = allBooks
+                .Skip((pageNumber - 1) * PageSize)
+                .Take(PageSize)
+                .ToList();
+
+            return Ok(new
+            {
+                TotalBooks = totalBooks,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber,
+                PageSize = PageSize,
+                Books = books
+            });
         }
 
         // Existing Functionality

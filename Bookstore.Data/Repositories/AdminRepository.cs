@@ -1,85 +1,69 @@
-﻿using System; // Basic .NET functionalities ko use karne ke liye
-using System.Collections.Generic; // Collection types like List ko use karne ke liye
-using System.Threading.Tasks; // Asynchronous programming ke liye
-using Bookstore.Data.Entities; // Admin entity ko use karne ke liye
-using Bookstore.Data.Interfaces; // Interface ko use karne ke liye
-using Microsoft.EntityFrameworkCore; // Entity Framework Core ka use for DB operations
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Bookstore.Data.Entities;
+using Bookstore.Data.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Data.Repositories
 {
-    // AdminRepository class jo IAdminRepository interface ko implement kar rahi hai
     public class AdminRepository : IAdminRepository
     {
-        private readonly AppDbContext _context; // DbContext ka reference, jisse DB se interact kiya jayega
+        private readonly AppDbContext _context;
 
-        // Constructor jo context ko initialize karta hai
         public AdminRepository(AppDbContext context) => _context = context;
 
-        // Admin ko register karne ka method
+        // Existing Methods
         public async Task<Admin> RegisterAdmin(Admin admin)
         {
-            _context.Admins.Add(admin); // Admin ko Add karte hain database mein
+            _context.Admins.Add(admin);
             try
             {
-                await _context.SaveChangesAsync(); // Database changes ko save karte hain
+                await _context.SaveChangesAsync();
             }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx) // Agar error aaye to
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
             {
-                // Inner exception ko throw karte hain, taaki controller handle kar sake
                 throw new Exception(dbEx.InnerException?.Message, dbEx);
             }
-            return admin; // Return karte hain newly added admin
+            return admin;
         }
 
-        // Admin ke login ke liye method (email aur password verify karna)
         public async Task<Admin> LoginAdmin(string email, string password)
         {
-            // Database se admin ko email ke basis par search karte hain
             var admin = await _context.Admins.FirstOrDefaultAsync(a => a.Email == email);
-            if (admin == null || !BCrypt.Net.BCrypt.Verify(password, admin.Password)) // Agar admin nahi mila ya password match nahi kiya
-                return null; // Toh null return karte hain
-            return admin; // Agar credentials match karte hain toh admin ko return karte hain
+            return (admin != null && BCrypt.Net.BCrypt.Verify(password, admin.Password)) ? admin : null;
         }
 
-        // Admin ke email ko check karna ki wo exist karta hai ya nahi
         public async Task<bool> AdminExists(string email) =>
-            await _context.Admins.AnyAsync(a => a.Email == email); // Agar email se koi admin milta hai, toh true return karenge
+            await _context.Admins.AnyAsync(a => a.Email == email);
 
-        // Email ke basis par admin ko fetch karna (auth verification ke liye)
-        public async Task<Admin> GetByEmail(string email)
-        {
-            // Agar admin milta hai toh return karenge, nahi toh exception throw karenge
-            return await _context.Admins.FirstOrDefaultAsync(a => a.Email == email)
-                   ?? throw new InvalidOperationException("Admin not found");
-        }
+        public async Task<Admin> GetByEmail(string email) =>
+            await _context.Admins.FirstOrDefaultAsync(a => a.Email == email)
+            ?? throw new InvalidOperationException("Admin not found");
 
-        // Sare admins ko asynchronously fetch karna
-        public async Task<IEnumerable<Admin>> GetAllAdminsAsync()
-        {
-            return await _context.Admins.ToListAsync(); // List of all admins return karte hain
-        }
+        // ✅ Added GetByExternalId Method
+        public async Task<Admin?> GetByExternalId(string externalId) =>
+            await _context.Admins.FirstOrDefaultAsync(a => a.ExternalId == externalId);
 
-        // Id ke basis par admin ko fetch karna
-        public async Task<Admin?> GetAdminByIdAsync(int id)
-        {
-            return await _context.Admins.FindAsync(id); // Admin ko id se search karte hain
-        }
+        public async Task<IEnumerable<Admin>> GetAllAdminsAsync() =>
+            await _context.Admins.ToListAsync();
 
-        // Admin ko update karne ka method
+        public async Task<Admin?> GetAdminByIdAsync(int id) =>
+            await _context.Admins.FindAsync(id);
+
         public async Task UpdateAdminAsync(Admin admin)
         {
-            _context.Admins.Update(admin); // Admin ko update karte hain
-            await _context.SaveChangesAsync(); // Changes ko save karte hain
+            _context.Admins.Update(admin);
+            await _context.SaveChangesAsync();
         }
 
-        // Admin ko delete karne ka method
         public async Task DeleteAdminAsync(int id)
         {
-            var admin = await _context.Admins.FindAsync(id); // Admin ko id ke basis par search karte hain
-            if (admin != null) // Agar admin milta hai toh
+            var admin = await _context.Admins.FindAsync(id);
+            if (admin != null)
             {
-                _context.Admins.Remove(admin); // Admin ko remove karte hain database se
-                await _context.SaveChangesAsync(); // Changes ko save karte hain
+                _context.Admins.Remove(admin);
+                await _context.SaveChangesAsync();
             }
         }
     }
