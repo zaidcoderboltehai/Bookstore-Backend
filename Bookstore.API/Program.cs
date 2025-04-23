@@ -22,6 +22,8 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Cors;
+using Bookstore.API.Authorization;  // Add this namespace
+using Microsoft.AspNetCore.Authorization;  // Add this for authorization
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Service Registrations
 // =============================================
 builder.Services.AddControllers();
+
+// Add custom authorization handler
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
@@ -40,6 +45,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+// Rest of the code remains the same...
 
 // Database Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>

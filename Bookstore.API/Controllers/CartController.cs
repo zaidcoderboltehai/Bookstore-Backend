@@ -18,13 +18,16 @@ namespace Bookstore.API.Controllers
             _cartService = cartService;
         }
 
+        // Helper method to retrieve the current logged-in user's ID from the JWT token
         private int GetUserId() =>
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
+        // Retrieve the cart of the current user
         [HttpGet]
         public async Task<IActionResult> GetCart()
             => Ok(await _cartService.GetCartAsync(GetUserId()));
 
+        // Add a book to the cart using its bookId
         [HttpPost("{bookId}")]
         public async Task<IActionResult> AddToCart(int bookId)
         {
@@ -32,6 +35,7 @@ namespace Bookstore.API.Controllers
             return Ok();
         }
 
+        // Update the quantity of a specific cart item
         [HttpPut("{cartId}")]
         public async Task<IActionResult> UpdateQuantity(int cartId, [FromBody] int quantity)
         {
@@ -39,6 +43,7 @@ namespace Bookstore.API.Controllers
             return Ok();
         }
 
+        // Remove a book from the cart using its cartId
         [HttpDelete("{cartId}")]
         public async Task<IActionResult> RemoveFromCart(int cartId)
         {
@@ -46,6 +51,7 @@ namespace Bookstore.API.Controllers
             return NoContent();
         }
 
+        // Purchase all items currently in the cart
         [HttpPost("purchase")]
         public async Task<IActionResult> PurchaseCart()
         {

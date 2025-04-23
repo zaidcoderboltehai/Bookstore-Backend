@@ -82,7 +82,7 @@ namespace Bookstore.API.Controllers
             });
         }
 
-        // Existing Functionality
+        // Import books from CSV file
         [HttpPost("import")]
         public async Task<IActionResult> ImportBooks(IFormFile file)
         {
@@ -92,6 +92,7 @@ namespace Bookstore.API.Controllers
             return Ok(new { Message = "Books imported successfully" });
         }
 
+        // Search books by author
         [HttpGet("search")]
         public async Task<IActionResult> SearchByAuthor([FromQuery] string author)
         {
@@ -99,6 +100,7 @@ namespace Bookstore.API.Controllers
             return Ok(books);
         }
 
+        // Sort books by price
         [HttpGet("sorted")]
         public async Task<IActionResult> GetSorted([FromQuery] string sort = "price_asc")
         {
@@ -107,6 +109,7 @@ namespace Bookstore.API.Controllers
             return Ok(books);
         }
 
+        // Get recent books
         [HttpGet("recent")]
         public async Task<IActionResult> GetRecent([FromQuery] int count = 5)
         {
