@@ -4,11 +4,13 @@ using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
 using CsvHelper;
 using CsvHelper.Configuration;
+using CsvHelper.TypeConversion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Bookstore.Business.Services
@@ -16,11 +18,11 @@ namespace Bookstore.Business.Services
     public class BookService : IBookService
     {
         private readonly IBookRepository _bookRepo;
-        private readonly IAdminRepository _adminRepo; // ✅ Added for Admin lookup
+        private readonly IAdminRepository _adminRepo;
 
         public BookService(
             IBookRepository bookRepo,
-            IAdminRepository adminRepo) // ✅ Dependency Injection
+            IAdminRepository adminRepo)
         {
             _bookRepo = bookRepo;
             _adminRepo = adminRepo;
@@ -29,11 +31,8 @@ namespace Bookstore.Business.Services
         // CRUD Operations
         public async Task<Book> AddBookAsync(Book book)
         {
-            if (book.Quantity < 0)
-                throw new ArgumentException("Quantity cannot be negative");
-
-            await _bookRepo.AddAsync(book);
-            return book;
+            ValidateBook(book);
+            return await _bookRepo.AddAsync(book);
         }
 
         public async Task<IEnumerable<Book>> GetAllBooksAsync()
@@ -43,72 +42,128 @@ namespace Bookstore.Business.Services
             => await _bookRepo.GetByIdAsync(id);
 
         public async Task UpdateBookAsync(Book book)
-            => await _bookRepo.UpdateAsync(book);
+        {
+            ValidateBook(book);
+            await _bookRepo.UpdateAsync(book);
+        }
 
         public async Task DeleteBookAsync(int id)
             => await _bookRepo.DeleteAsync(id);
 
-        // Bulk Import with Admin Validation ✅
+        // Bulk Import with Enhanced CSV Handling
         public async Task ImportBooksFromCsvAsync(Stream fileStream, int currentAdminId)
         {
-            using var reader = new StreamReader(fileStream);
-            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+            using var reader = new StreamReader(fileStream, Encoding.UTF8);
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                PrepareHeaderForMatch = args => args.Header.ToLower()
-            });
+                PrepareHeaderForMatch = args => args.Header.ToLower().Trim(),
+                MissingFieldFound = null,
+                HeaderValidated = null,
+                IgnoreBlankLines = true,
+                BadDataFound = context =>
+                    Console.WriteLine($"Bad data at row {context.Context.Parser.Row}: {context.RawRecord}"),
+                Delimiter = ",",
+                Encoding = Encoding.UTF8
+            };
+
+            using var csv = new CsvReader(reader, config);
+            csv.Context.TypeConverterCache.AddConverter<DateTime>(
+                new DateTimeConverter("yyyy-MM-dd")
+            );
 
             var books = new List<Book>();
-            foreach (var dto in csv.GetRecords<CsvBookDto>())
+
+            try
             {
-                // Validate Admin from CSV's admin_user_id
-                var admin = await _adminRepo.GetByExternalId(dto.admin_user_id);
-                if (admin == null)
+                foreach (var dto in csv.GetRecords<CsvBookDto>())
                 {
-                    throw new ArgumentException(
-                        $"Admin with ID '{dto.admin_user_id}' not found for book: {dto.bookName}"
-                    );
+                    var book = ConvertToBookEntity(dto);
+                    await ValidateAdminReference(book);
+                    books.Add(book);
                 }
-
-                // Validate Quantity
-                if (dto.quantity < 0)
-                {
-                    throw new ArgumentException(
-                        $"Invalid quantity ({dto.quantity}) for book: {dto.bookName}"
-                    );
-                }
-
-                // Create Book with resolved AdminId
-                books.Add(new Book
-                {
-                    BookName = dto.bookName,
-                    Author = dto.author,
-                    Description = dto.description,
-                    Price = dto.price,
-                    DiscountPrice = dto.discountPrice,
-                    Quantity = dto.quantity,
-                    BookImage = dto.bookImage,
-                    AdminId = admin.Id, // ✅ Use CSV's admin ID
-                    CreatedAt = dto.createdAt?.Date ?? DateTime.UtcNow,
-                    UpdatedAt = dto.updatedAt?.Date ?? DateTime.UtcNow
-                });
+            }
+            catch (CsvHelperException ex)
+            {
+                throw new ArgumentException($"CSV processing failed: {ex.Message}");
             }
 
-            // Bulk Insert
             foreach (var book in books)
             {
                 await _bookRepo.AddAsync(book);
             }
         }
 
-        // Search/Sort
+        // Search/Sort Features
         public async Task<IEnumerable<Book>> SearchByAuthorAsync(string author)
             => await _bookRepo.SearchByAuthorAsync(author);
 
         public async Task<IEnumerable<Book>> SortByPriceAsync(bool ascending)
             => await _bookRepo.SortByPriceAsync(ascending);
 
-        // Utilities
         public async Task<IEnumerable<Book>> GetRecentBooksAsync(int count)
             => await _bookRepo.GetRecentAsync(count);
+
+        #region Private Helpers
+
+        private Book ConvertToBookEntity(CsvBookDto dto)
+        {
+            return new Book
+            {
+                BookName = SanitizeString(dto.bookName),
+                Author = SanitizeString(dto.author),
+                Description = SanitizeString(dto.description),
+                Price = dto.price,
+                DiscountPrice = dto.discountPrice,
+                Quantity = dto.quantity,
+                BookImage = SanitizeString(dto.bookImage),
+                AdminId = ResolveAdminId(dto.admin_user_id),
+                CreatedAt = dto.createdAt,
+                UpdatedAt = dto.updatedAt
+            };
+        }
+
+        private int ResolveAdminId(string externalId)
+        {
+            var admin = _adminRepo.GetByExternalId(externalId).Result;
+            return admin?.Id ?? throw new ArgumentException(
+                $"Admin not found with External ID: {externalId}"
+            );
+        }
+
+        private async Task ValidateAdminReference(Book book)
+        {
+            var admin = await _adminRepo.GetAdminByIdAsync(book.AdminId);
+            if (admin == null)
+                throw new ArgumentException($"Invalid Admin ID: {book.AdminId}");
+        }
+
+        private static string? SanitizeString(string? input)
+            => string.IsNullOrWhiteSpace(input) ? null : input.Trim();
+
+        private void ValidateBook(Book book)
+        {
+            if (book.Quantity < 0)
+                throw new ArgumentException("Quantity cannot be negative");
+
+            if (book.Price < 0)
+                throw new ArgumentException("Price cannot be negative");
+        }
+
+        #endregion
     }
+
+    #region CSV Configuration
+
+    public class DateTimeConverter : DefaultTypeConverter
+    {
+        private readonly string _format;
+
+        public DateTimeConverter(string format) => _format = format;
+
+        public override object ConvertFromString(string text, IReaderRow row, MemberMapData memberMapData)
+            => DateTime.ParseExact(text, _format, CultureInfo.InvariantCulture);
+    }
+
+    #endregion
 }
