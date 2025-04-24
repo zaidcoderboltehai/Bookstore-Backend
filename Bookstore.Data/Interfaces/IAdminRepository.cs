@@ -1,26 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using Bookstore.Data.Entities;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Bookstore.Data.Entities;
 
 namespace Bookstore.Data.Interfaces
 {
     public interface IAdminRepository
     {
-        // Register a new admin
+        // Registration and Authentication
         Task<Admin> RegisterAdmin(Admin admin);
-
-        // Login with email/password (nullable return)
         Task<Admin?> LoginAdmin(string email, string password);
 
-        // Check if admin exists by email
+        // Existence Checks
         Task<bool> AdminExists(string email);
 
-        // Get admin by email (for auth verification)
-        Task<Admin> GetByEmail(string email);
-
-        // 👇 New CRUD Methods
+        // Get Operations
+        Task<Admin?> GetByEmail(string email);
+        Task<Admin?> GetByExternalId(string externalId);
         Task<IEnumerable<Admin>> GetAllAdminsAsync();
         Task<Admin?> GetAdminByIdAsync(int id);
+
+        // Update/Delete Operations
         Task UpdateAdminAsync(Admin admin);
         Task DeleteAdminAsync(int id);
     }

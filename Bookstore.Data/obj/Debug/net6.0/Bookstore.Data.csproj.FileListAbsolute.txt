@@ -7,6 +7,7 @@ C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.AssemblyInfoInputs.cache
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.AssemblyInfo.cs
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.csproj.CoreCompileInputs.cache
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.sourcelink.json
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.dll
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\refint\Bookstore.Data.dll
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.Data\obj\Debug\net6.0\Bookstore.Data.pdb

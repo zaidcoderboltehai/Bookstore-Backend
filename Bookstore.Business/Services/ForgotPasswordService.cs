@@ -4,6 +4,8 @@ using Bookstore.Business.Interfaces;
 using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using BCrypt.Net; // ✅ सही namespace
 
 namespace Bookstore.Business.Services
 {
@@ -13,86 +15,156 @@ namespace Bookstore.Business.Services
         private readonly IAdminRepository _adminRepo;
         private readonly IPasswordResetRepository _resetRepo;
         private readonly IConfiguration _config;
+        private readonly ILogger<ForgotPasswordService> _logger;
 
         public ForgotPasswordService(
             IUserRepository userRepo,
             IAdminRepository adminRepo,
             IPasswordResetRepository resetRepo,
-            IConfiguration config)
+            IConfiguration config,
+            ILogger<ForgotPasswordService> logger)
         {
             _userRepo = userRepo;
             _adminRepo = adminRepo;
             _resetRepo = resetRepo;
             _config = config;
+            _logger = logger;
         }
 
         public async Task SendUserForgotPasswordLink(string email)
         {
-            if (!await _userRepo.UserExists(email))
-                throw new InvalidOperationException("User not found");
-
-            var token = Guid.NewGuid();
-            var reset = new PasswordReset
+            try
             {
-                Token = token,
-                Email = email,
-                ExpiryUtc = DateTime.UtcNow.AddHours(1)
-            };
-            await _resetRepo.CreateAsync(reset);
+                _logger.LogInformation("User password reset requested for {Email}", email);
 
-            var frontUrl = _config["Frontend:ResetPasswordUrl"];
-            var link = $"{frontUrl}?token={token}";
-            // TODO: Send email
+                var user = await _userRepo.GetUserByEmail(email);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found: {Email}", email);
+                    throw new InvalidOperationException("User not found");
+                }
+
+                var token = Guid.NewGuid();
+                await CreatePasswordResetRecord(email, token);
+
+                var resetLink = GenerateResetLink(token, "user");
+                LogResetLink(email, resetLink);
+
+                // TODO: Implement email service
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in user password reset for {Email}", email);
+                throw;
+            }
         }
 
         public async Task SendAdminForgotPasswordLink(string email, string secretKey)
         {
-            if (secretKey != _config["AdminSecretKey"])
-                throw new UnauthorizedAccessException("Invalid SecretKey");
-            if (!await _adminRepo.AdminExists(email))
-                throw new InvalidOperationException("Admin not found");
-
-            var token = Guid.NewGuid();
-            var reset = new PasswordReset
+            try
             {
-                Token = token,
-                Email = email,
-                ExpiryUtc = DateTime.UtcNow.AddHours(1)
-            };
-            await _resetRepo.CreateAsync(reset);
+                _logger.LogInformation("Admin password reset requested for {Email}", email);
 
-            var frontUrl = _config["Frontend:ResetPasswordUrl"];
-            var link = $"{frontUrl}?token={token}";
-            // TODO: Send email
+                if (secretKey != _config["AdminSecretKey"])
+                {
+                    _logger.LogWarning("Invalid secret key attempt for admin: {Email}", email);
+                    throw new UnauthorizedAccessException("Invalid admin credentials");
+                }
+
+                var admin = await _adminRepo.GetByEmail(email);
+                if (admin == null)
+                {
+                    _logger.LogWarning("Admin not found: {Email}", email);
+                    throw new InvalidOperationException("Admin not found");
+                }
+
+                var token = Guid.NewGuid();
+                await CreatePasswordResetRecord(email, token);
+
+                var resetLink = GenerateResetLink(token, "admin");
+                LogResetLink(email, resetLink);
+
+                // TODO: Implement email service
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin password reset for {Email}", email);
+                throw;
+            }
         }
 
         public async Task ResetPassword(Guid token, string newPassword)
         {
-            var record = await _resetRepo.GetByTokenAsync(token)
-                ?? throw new InvalidOperationException("Invalid or expired token");
-
-            if (record.ExpiryUtc < DateTime.UtcNow)
-                throw new InvalidOperationException("Token expired");
-
-            // Check if email belongs to user or admin
-            if (await _userRepo.UserExists(record.Email))
+            try
             {
-                // ✅ Fixed: Use GetUserByEmail instead of LoginUser
-                var user = await _userRepo.GetUserByEmail(record.Email);
-                if (user == null)
-                    throw new InvalidOperationException("User not found");
+                _logger.LogInformation("Processing password reset for token: {Token}", token);
 
-                user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
-                await _userRepo.UpdateUser(user); // Save updated password
+                var record = await _resetRepo.GetByTokenAsync(token)
+                    ?? throw new InvalidOperationException("Invalid token");
+
+                if (record.ExpiryUtc < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Expired token: {Token}", token);
+                    throw new InvalidOperationException("Token expired");
+                }
+
+                await UpdatePassword(record.Email, newPassword);
+                await _resetRepo.DeleteAsync(record);
+
+                _logger.LogInformation("Password reset successful for {Email}", record.Email);
             }
-            else
+            catch (Exception ex)
             {
-                var admin = await _adminRepo.GetByEmail(record.Email);
+                _logger.LogError(ex, "Password reset failed for token: {Token}", token);
+                throw;
+            }
+        }
+
+        private async Task CreatePasswordResetRecord(string email, Guid token)
+        {
+            await _resetRepo.CreateAsync(new PasswordReset
+            {
+                Token = token,
+                Email = email,
+                ExpiryUtc = DateTime.UtcNow.AddHours(1)
+            });
+        }
+
+        private string GenerateResetLink(Guid token, string userType)
+        {
+            var baseUrl = _config["Frontend:BaseUrl"];
+            return userType.ToLower() switch
+            {
+                "admin" => $"{baseUrl}/admin-reset-password?token={token}",
+                _ => $"{baseUrl}/reset-password?token={token}"
+            };
+        }
+
+        private async Task UpdatePassword(string email, string newPassword)
+        {
+            var user = await _userRepo.GetUserByEmail(email);
+            if (user != null)
+            {
+                // ✅ BCrypt.Net-Next के साथ EnhancedHashPassword
+                user.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12);
+                await _userRepo.UpdateUserAsync(user);
+                return;
+            }
+
+            var admin = await _adminRepo.GetByEmail(email);
+            if (admin != null)
+            {
                 admin.Password = BCrypt.Net.BCrypt.EnhancedHashPassword(newPassword, workFactor: 12);
-                await _adminRepo.RegisterAdmin(admin); // Save admin (if using UpdateAdminAsync, use that instead)
+                await _adminRepo.UpdateAdminAsync(admin);
+                return;
             }
 
-            await _resetRepo.DeleteAsync(record); // Cleanup the token
+            throw new InvalidOperationException("User not found");
+        }
+
+        private void LogResetLink(string email, string link)
+        {
+            _logger.LogDebug("Password Reset Link for {Email}: {Link}", email, link);
         }
     }
 }
