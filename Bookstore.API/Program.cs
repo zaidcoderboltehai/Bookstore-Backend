@@ -1,3 +1,4 @@
+using System.Net;
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,37 +21,54 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Cors;
+using Bookstore.API.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// =============================================
 // Service Registrations
-builder.Services.AddControllers(); // Controllers ko register kar rahe hain
+// =============================================
+builder.Services.AddControllers();
 
-// Database Configuration with Conditional Logging
+// Add custom authorization handler
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
+
+// CORS Configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllPolicy", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Database Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // SQL Server se connection string use kar rahe hain
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        b => b.MigrationsAssembly("Bookstore.Data")
+    );
 
-    // Development environment mein detailed SQL logs enable kar rahe hain
     if (builder.Environment.IsDevelopment())
     {
         options.LogTo(
-            message => Console.WriteLine($"DB Query: {message}"), // Log messages ko format kar rahe hain
-            LogLevel.Information // Log level ko define kar rahe hain (Information, Debug, etc.)
-        )
-        .EnableDetailedErrors(); // Detailed error messages show karne ke liye
+            message => Console.WriteLine($"DB Query: {message}"),
+            LogLevel.Information
+        ).EnableDetailedErrors();
     }
 });
 
-// Enhanced Validation Response Configuration
+// Configure API behavior
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true; // Default validation filter ko suppress kar rahe hain
-
+    options.SuppressModelStateInvalidFilter = true;
     options.InvalidModelStateResponseFactory = context =>
     {
-        // Model state errors ko extract kar rahe hain
         var errors = context.ModelState
             .Where(e => e.Value.Errors.Count > 0)
             .SelectMany(kvp => kvp.Value.Errors
@@ -59,61 +77,66 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                     Field = kvp.Key,
                     Message = !string.IsNullOrEmpty(e.ErrorMessage)
                         ? e.ErrorMessage
-                        : "Invalid value format" // Default error message
+                        : "Invalid value format"
                 }))
             .ToList();
 
-        // Response return kar rahe hain BadRequest ke sath error details
         return new BadRequestObjectResult(new
         {
             Status = "ValidationError",
             Errors = errors,
-            Solution = "Check validation rules for each field"
+            Solution = "Check validation rules"
         });
     };
 });
 
-// JWT Authentication (Fixed Claim Mapping)
+// JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true, // Issuer validate kar rahe hain
-            ValidateAudience = true, // Audience validate kar rahe hain
-            ValidateLifetime = true, // Token ke expiry ko validate kar rahe hain
-            ValidateIssuerSigningKey = true, // Issuer signing key ko validate kar rahe hain
-            ValidIssuer = builder.Configuration["Jwt:Issuer"], // Valid issuer ko set kar rahe hain
-            ValidAudience = builder.Configuration["Jwt:Audience"], // Valid audience ko set kar rahe hain
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])) // Signing key set kar rahe hain
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            NameClaimType = JwtRegisteredClaimNames.Sub,
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
 // Dependency Injection
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // IUserRepository ko UserRepository se map kar rahe hain
-builder.Services.AddScoped<IAdminRepository, AdminRepository>(); // IAdminRepository ko AdminRepository se map kar rahe hain
-builder.Services.AddScoped<IUserAuthService, UserAuthService>(); // IUserAuthService ko UserAuthService se map kar rahe hain
-builder.Services.AddScoped<IAdminAuthService, AdminAuthService>(); // IAdminAuthService ko AdminAuthService se map kar rahe hain
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>(); // RefreshTokenRepository ko add kar rahe hain
-builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>(); // PasswordResetRepository ko add kar rahe hain
-builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>(); // ForgotPasswordService ko add kar rahe hain
-builder.Services.AddScoped<ITokenService, TokenService>(); // TokenService ko add kar rahe hain
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IUserAuthService, UserAuthService>();
+builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 // Swagger Configuration
-builder.Services.AddEndpointsApiExplorer(); // Endpoints ko explore kar rahe hain
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bookstore API", Version = "v1" }); // API documentation create kar rahe hain
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bookstore API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme", // JWT authorization ke liye description de rahe hain
-        Name = "Authorization", // Header mein Authorization ke naam se pass hoga
-        In = ParameterLocation.Header, // Header mein authorization pass karenge
-        Type = SecuritySchemeType.Http, // HTTP scheme type use kar rahe hain
-        Scheme = "bearer", // Bearer scheme set kar rahe hain
-        BearerFormat = "JWT" // JWT format specify kar rahe hain
+        Description = "JWT Authorization header",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -124,7 +147,7 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer" // Bearer authorization ko required bana rahe hain
+                    Id = "Bearer"
                 }
             },
             Array.Empty<string>()
@@ -134,19 +157,27 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Content Type Validation Middleware
-app.UseWhen(context => !context.Request.Path.StartsWithSegments("/swagger"), appBuilder =>
+// =============================================
+// Middleware Pipeline
+// =============================================
+
+// Modified JSON Content Check with exclusions
+app.UseWhen(context =>
+    context.Request.Method is "POST" or "PUT" or "PATCH" &&
+    // Exclude these endpoints from JSON content type check
+    !context.Request.Path.StartsWithSegments("/api/Books/import") &&
+    !context.Request.Path.StartsWithSegments("/api/Cart"),
+appBuilder =>
 {
     appBuilder.Use(async (context, next) =>
     {
-        // Agar request ka content type JSON nahi hai toh error dikhayenge
         if (!context.Request.HasJsonContentType())
         {
             context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
             await context.Response.WriteAsJsonAsync(new
             {
                 Status = "Error",
-                Message = "Request must be in JSON format", // JSON format ke alawa kuch nahi chalega
+                Message = "JSON format required",
                 SupportedTypes = new[] { "application/json" }
             });
             return;
@@ -155,7 +186,7 @@ app.UseWhen(context => !context.Request.Path.StartsWithSegments("/swagger"), app
     });
 });
 
-// Error Handling Middleware
+// Global Error Handling
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -163,38 +194,42 @@ app.UseExceptionHandler(errorApp =>
         context.Response.ContentType = "application/json";
         var error = context.Features.Get<IExceptionHandlerFeature>();
 
-        // Exception handle karte waqt response mein error message bhej rahe hain
         await context.Response.WriteAsJsonAsync(new
         {
             StatusCode = context.Response.StatusCode,
-            Message = "Request processing failed", // General error message
-            Detailed = app.Environment.IsDevelopment() ? error?.Error.Message : null, // Development mein detailed error message dikhayenge
+            Message = "Request failed",
+            Detailed = app.Environment.IsDevelopment() ? error?.Error.Message : null,
             Solutions = new[] {
-                "Check input format", // Solution options
-                "Verify required fields",
-                "Review API documentation"
+                "Check input format",
+                "Verify fields",
+                "Check API docs"
             }
         });
     });
 });
 
-// Swagger Configuration (Development Only)
+// Swagger UI
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); // Swagger ko enable kar rahe hain
+    app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bookstore API v1"); // Swagger UI ke endpoint ko set kar rahe hain
-        c.RoutePrefix = "swagger"; // Route prefix ko 'swagger' set kar rahe hain
-        c.DocumentTitle = "Bookstore API Documentation"; // Swagger document ka title set kar rahe hain
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bookstore API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "API Docs";
     });
 }
 
-// Pipeline Configuration
-app.UseHttpsRedirection(); // HTTPS redirection ko enable kar rahe hain
-app.UseRouting(); // Routing ko enable kar rahe hain
-app.UseAuthentication(); // Authentication middleware ko use kar rahe hain
-app.UseAuthorization(); // Authorization middleware ko use kar rahe hain
-app.MapControllers(); // Controllers ko map kar rahe hain
+// Middleware Order
+app.UseHttpsRedirection();
+app.UseRouting();
 
-app.Run(); // Application ko run kar rahe hain
+// CORS Middleware
+app.UseCors("AllowAllPolicy");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

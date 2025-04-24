@@ -1,4 +1,4 @@
-﻿// Required namespaces for controller, auth, models, interfaces, etc.
+﻿// Required namespaces for controller, authentication, models, interfaces, etc.
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Bookstore.Data.Entities;
@@ -16,14 +16,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Bookstore.API.Controllers
 {
-    // Ye controller API ke liye hai
+    // This controller handles the API endpoints
     [ApiController]
     [Route("[controller]")]
-    // Sirf User ya Admin role wale hi access kar sakte hai
+    // Only users with either "User" or "Admin" roles can access this controller
     [Authorize(Roles = "User,Admin")]
     public class UsersController : ControllerBase
     {
-        // Dependencies ko inject kiya gaya hai
+        // Injected dependencies
         private readonly IUserRepository _repo;
         private readonly IUserAuthService _authService;
         private readonly ITokenService _tokenService;
@@ -31,7 +31,7 @@ namespace Bookstore.API.Controllers
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IHostEnvironment _environment;
 
-        // Constructor - yahan sab services inject ho rahe hai
+        // Constructor - injecting all services
         public UsersController(
             IUserRepository repo,
             IUserAuthService authService,
@@ -48,7 +48,7 @@ namespace Bookstore.API.Controllers
             _environment = environment;
         }
 
-        // Sabhi users ki list laata hai
+        // Endpoint to retrieve all users
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -66,7 +66,7 @@ namespace Bookstore.API.Controllers
             });
         }
 
-        // Kisi specific user ko ID se laata hai
+        // Endpoint to retrieve a specific user by ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -90,7 +90,7 @@ namespace Bookstore.API.Controllers
                 },
                 Links = new
                 {
-                    // Self-link return karta hai (HATEOAS approach)
+                    // Self-link for HATEOAS
                     Self = Url.ActionLink(
                         action: nameof(GetById),
                         controller: "Users",
@@ -101,9 +101,9 @@ namespace Bookstore.API.Controllers
             });
         }
 
-        // New user registration
+        // Endpoint to register a new user
         [HttpPost("register")]
-        [AllowAnonymous] // Publicly accessible hai
+        [AllowAnonymous] // Accessible publicly
         public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
         {
             try
@@ -143,7 +143,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
-        // User login endpoint
+        // Endpoint to authenticate/login a user
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
@@ -153,11 +153,9 @@ namespace Bookstore.API.Controllers
                 AuditLog($"Login attempt: {dto.Email}");
                 var user = await _authService.Login(dto.Email, dto.Password);
 
-                // Token generate karta hai
                 var accessToken = _tokenService.CreateToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
-                // Refresh token DB me save hota hai
                 await _refreshTokenRepo.CreateAsync(new RefreshToken
                 {
                     Token = refreshToken,
@@ -173,7 +171,7 @@ namespace Bookstore.API.Controllers
                     Status = "Authenticated",
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    ExpiresIn = 1800, // 30 mins
+                    ExpiresIn = 1800, // 30 minutes
                     UserInfo = new
                     {
                         user.Id,
@@ -196,7 +194,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
-        // Refresh token endpoint - naya token issue karta hai
+        // Endpoint to refresh token
         [HttpPost("refresh-token")]
         [AllowAnonymous]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
@@ -207,7 +205,6 @@ namespace Bookstore.API.Controllers
 
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
 
-                // Token me user type check karta hai
                 var userTypeClaim = principal.FindFirst("UserType")?.Value;
                 if (userTypeClaim != "User")
                 {
@@ -215,7 +212,6 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid token type for user");
                 }
 
-                // Token se userId nikaal ke check karta hai
                 var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ??
                                 principal.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -225,7 +221,6 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid user identifier");
                 }
 
-                // Refresh token validate karta hai
                 var storedToken = await _refreshTokenRepo.FindByTokenAsync(request.RefreshToken);
                 if (storedToken == null ||
                     storedToken.UserId != userId ||
@@ -236,7 +231,6 @@ namespace Bookstore.API.Controllers
                     throw new SecurityTokenException("Invalid or expired refresh token");
                 }
 
-                // Token rotate karta hai (naye tokens deta hai)
                 var newAccessToken = _tokenService.CreateToken(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
@@ -288,7 +282,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
-        // Forgot password email bhejne ka endpoint
+        // Endpoint to send forgot password instructions
         [HttpPost("forgot-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
@@ -317,7 +311,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
-        // Password reset hone ka endpoint
+        // Endpoint to reset the password
         [HttpPost("reset-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
@@ -347,7 +341,7 @@ namespace Bookstore.API.Controllers
             }
         }
 
-        // Console pe log print karta hai for debugging and audit
+        // Method to log audit messages to console
         private void AuditLog(string message)
         {
             Console.WriteLine($"[AUDIT] {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - {message}");
