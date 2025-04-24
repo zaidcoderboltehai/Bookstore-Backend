@@ -53,7 +53,7 @@ namespace Bookstore.API.Controllers
 
                 var admin = new Admin
                 {
-                    ExternalId = Guid.NewGuid().ToString(), // Auto-generated GUID
+                    ExternalId = Guid.NewGuid().ToString(),
                     FirstName = request.FirstName.Trim(),
                     LastName = request.LastName.Trim(),
                     Email = request.Email.ToLower().Trim(),
@@ -70,7 +70,7 @@ namespace Bookstore.API.Controllers
                     Admin = new
                     {
                         createdAdmin.Id,
-                        createdAdmin.ExternalId, // Return for CSV use
+                        createdAdmin.ExternalId,
                         createdAdmin.Email,
                         createdAdmin.FirstName,
                         createdAdmin.LastName
@@ -117,7 +117,7 @@ namespace Bookstore.API.Controllers
                     Status = "AuthSuccess",
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    ExpiresIn = 1800, // 30 minutes
+                    ExpiresIn = 1800,
                     AdminId = admin.Id
                 });
             }
@@ -153,11 +153,10 @@ namespace Bookstore.API.Controllers
                 if (storedToken == null || storedToken.UserId != adminId || storedToken.IsExpired)
                     throw new SecurityTokenException("Invalid/expired refresh token");
 
-                // Generate new tokens
-                var newAccessToken = _tokenService.CreateToken(principal.Claims);
+                // ✅ Use dedicated claims-based token creation
+                var newAccessToken = _tokenService.CreateTokenFromClaims(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-                // Update refresh token
                 await _refreshTokenRepo.DeleteAsync(storedToken.Id);
                 await _refreshTokenRepo.CreateAsync(new RefreshToken
                 {

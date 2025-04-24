@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
 
 namespace Bookstore.Business.Interfaces
 {
@@ -8,20 +9,23 @@ namespace Bookstore.Business.Interfaces
     public interface ITokenService
     {
         /// <summary>
-        /// Generates a JWT access token with user claims
+        /// Generates a JWT access token from entity properties
         /// </summary>
         /// <param name="entity">User/Admin entity to generate token for</param>
         /// <returns>Signed JWT token string</returns>
-        // 🏷️ Yeh method JWT access token generate karta hai user ya admin ke claims ke saath
-        // Ismein dynamic entity pass hota hai jo user ya admin ki details ko represent karta hai
         string CreateToken(dynamic entity);
+
+        /// <summary>
+        /// Generates a JWT access token directly from claims
+        /// </summary>
+        /// <param name="claims">Collection of security claims</param>
+        /// <returns>Signed JWT token string</returns>
+        string CreateTokenFromClaims(IEnumerable<Claim> claims);
 
         /// <summary>
         /// Generates a cryptographically secure refresh token
         /// </summary>
         /// <returns>Base64 encoded refresh token</returns>
-        // 🔄 Yeh method cryptographically secure refresh token generate karta hai
-        // Refresh token ko Base64 mein encode karke return karta hai
         string GenerateRefreshToken();
 
         /// <summary>
@@ -29,9 +33,6 @@ namespace Bookstore.Business.Interfaces
         /// </summary>
         /// <param name="token">Expired JWT access token</param>
         /// <returns>Validated claims principal</returns>
-        /// <exception cref="SecurityTokenException">Thrown for invalid/expired tokens</exception>
-        // 🕵️‍♂️ Yeh method expired JWT access token se claims principal extract karta hai
-        // Agar token invalid ya expired ho toh SecurityTokenException throw hota hai
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
     }
 }

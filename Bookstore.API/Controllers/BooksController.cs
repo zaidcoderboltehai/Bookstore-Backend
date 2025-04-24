@@ -12,18 +12,18 @@ namespace Bookstore.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,User")] // ✅ Allow access to both Admins and Users
     public class BooksController : ControllerBase
     {
         private readonly IBookService _bookService;
-        private const int PageSize = 5; // Set page size to 5 as requested
+        private const int PageSize = 5;
 
         public BooksController(IBookService bookService)
         {
             _bookService = bookService;
         }
 
-        // CRUD Endpoints
+        // ✅ For both Users/Admins
         [HttpGet]
         public async Task<IActionResult> GetAllBooks()
             => Ok(await _bookService.GetAllBooksAsync());
@@ -32,7 +32,9 @@ namespace Bookstore.API.Controllers
         public async Task<IActionResult> GetBook(int id)
             => Ok(await _bookService.GetBookByIdAsync(id));
 
+        // ❌ Only for Admins
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateBook(Book book)
         {
             var createdBook = await _bookService.AddBookAsync(book);
@@ -40,6 +42,7 @@ namespace Bookstore.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBook(int id, Book book)
         {
             if (id != book.Id) return BadRequest();
@@ -48,20 +51,18 @@ namespace Bookstore.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBook(int id)
         {
             await _bookService.DeleteBookAsync(id);
             return NoContent();
         }
 
-        // New Pagination Endpoint
+        // ✅ For both Users/Admins
         [HttpGet("page/{pageNumber}")]
         public async Task<IActionResult> GetBooksByPage(int pageNumber)
         {
-            if (pageNumber < 1)
-            {
-                return BadRequest("Page number must be greater than 0");
-            }
+            if (pageNumber < 1) return BadRequest("Page number must be greater than 0");
 
             var allBooks = await _bookService.GetAllBooksAsync();
             var totalBooks = allBooks.Count();
@@ -72,18 +73,12 @@ namespace Bookstore.API.Controllers
                 .Take(PageSize)
                 .ToList();
 
-            return Ok(new
-            {
-                TotalBooks = totalBooks,
-                TotalPages = totalPages,
-                CurrentPage = pageNumber,
-                PageSize = PageSize,
-                Books = books
-            });
+            return Ok(new { TotalBooks = totalBooks, TotalPages = totalPages, CurrentPage = pageNumber, Books = books });
         }
 
-        // Import books from CSV file
+        // ❌ Only for Admins
         [HttpPost("import")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ImportBooks(IFormFile file)
         {
             var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -92,29 +87,20 @@ namespace Bookstore.API.Controllers
             return Ok(new { Message = "Books imported successfully" });
         }
 
-        // Search books by author
+        // ✅ For both Users/Admins
         [HttpGet("search")]
         public async Task<IActionResult> SearchByAuthor([FromQuery] string author)
-        {
-            var books = await _bookService.SearchByAuthorAsync(author);
-            return Ok(books);
-        }
+            => Ok(await _bookService.SearchByAuthorAsync(author));
 
-        // Sort books by price
         [HttpGet("sorted")]
         public async Task<IActionResult> GetSorted([FromQuery] string sort = "price_asc")
         {
             var ascending = sort.Equals("price_asc", StringComparison.OrdinalIgnoreCase);
-            var books = await _bookService.SortByPriceAsync(ascending);
-            return Ok(books);
+            return Ok(await _bookService.SortByPriceAsync(ascending));
         }
 
-        // Get recent books
         [HttpGet("recent")]
         public async Task<IActionResult> GetRecent([FromQuery] int count = 5)
-        {
-            var books = await _bookService.GetRecentBooksAsync(count);
-            return Ok(books);
-        }
+            => Ok(await _bookService.GetRecentBooksAsync(count));
     }
 }

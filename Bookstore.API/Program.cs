@@ -22,8 +22,8 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Cors;
-using Bookstore.API.Authorization;  // Add this namespace
-using Microsoft.AspNetCore.Authorization;  // Add this for authorization
+using Bookstore.API.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,8 +45,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-
-// Rest of the code remains the same...
 
 // Database Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -163,9 +161,12 @@ var app = builder.Build();
 // Middleware Pipeline
 // =============================================
 
-// JSON Content Check for POST/PUT/PATCH requests only
+// Modified JSON Content Check with exclusions
 app.UseWhen(context =>
-    context.Request.Method is "POST" or "PUT" or "PATCH",
+    context.Request.Method is "POST" or "PUT" or "PATCH" &&
+    // Exclude these endpoints from JSON content type check
+    !context.Request.Path.StartsWithSegments("/api/Books/import") &&
+    !context.Request.Path.StartsWithSegments("/api/Cart"),
 appBuilder =>
 {
     appBuilder.Use(async (context, next) =>
