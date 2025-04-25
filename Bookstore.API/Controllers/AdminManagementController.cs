@@ -16,7 +16,7 @@ namespace Bookstore.API.Controllers
     [Route("[controller]")]
 
     // Only users with the Admin role can access this controller
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     public class AdminManagementController : ControllerBase
     {
         // Repository object for accessing admin data

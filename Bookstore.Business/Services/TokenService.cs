@@ -12,7 +12,7 @@ using Bookstore.Business.Interfaces;
 namespace Bookstore.Business.Services
 {
     /// <summary>
-    /// Service to handle JWT token generation and validation
+    /// Handles JWT token generation and validation
     /// </summary>
     public class TokenService : ITokenService
     {
@@ -23,97 +23,89 @@ namespace Bookstore.Business.Services
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _signingKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_config["Jwt:Key"])); // Load JWT secret key
+                Encoding.UTF8.GetBytes(_config["Jwt:Key"])
+            );
         }
 
         /// <summary>
-        /// Generate JWT token from entity properties
+        /// Generates JWT access token from entity properties
         /// </summary>
         public string CreateToken(dynamic entity)
         {
             if (entity == null)
-                throw new ArgumentNullException(nameof(entity), "Entity cannot be null to generate token");
+                throw new ArgumentNullException(nameof(entity), "Entity required for token generation");
 
             var claims = new List<Claim>
             {
-                // ✅ Add user ID and role claims
+                // Core identity claims
                 new Claim(ClaimTypes.NameIdentifier, entity.Id.ToString()),
-                new Claim(ClaimTypes.Role, entity.Role), // "Admin" or "User"
+                new Claim("role", entity.Role.ToUpper()), // ✅ Ensures uppercase role values
                 new Claim(JwtRegisteredClaimNames.Email, entity.Email),
+                
+                // Additional metadata
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("FullName", $"{entity.FirstName} {entity.LastName}")
+                new Claim("FullName", $"{entity.FirstName} {entity.LastName}"),
+                new Claim("AccountType", entity is User ? "StandardUser" : "Admin")
             };
 
             return CreateTokenFromClaims(claims);
         }
 
         /// <summary>
-        /// Generate JWT token directly from claims
+        /// Generates token from existing claims
         /// </summary>
         public string CreateTokenFromClaims(IEnumerable<Claim> claims)
         {
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(30), // Token validity: 30 minutes
+                Expires = DateTime.UtcNow.AddMinutes(30),
                 SigningCredentials = new SigningCredentials(
                     _signingKey,
-                    SecurityAlgorithms.HmacSha512Signature), // Signature algorithm
-                Issuer = _config["Jwt:Issuer"], // Token issuer
-                Audience = _config["Jwt:Audience"], // Token target audience
-                NotBefore = DateTime.UtcNow // Token valid from now
+                    SecurityAlgorithms.HmacSha512Signature
+                ),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                NotBefore = DateTime.UtcNow
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token); // Convert token to string
+            return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
         }
 
         /// <summary>
-        /// Generate a secure refresh token
+        /// Generates cryptographically secure refresh token
         /// </summary>
         public string GenerateRefreshToken()
         {
             using var rng = RandomNumberGenerator.Create();
             var randomBytes = new byte[64];
             rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes); // Base64 encoded token
+            return Convert.ToBase64String(randomBytes);
         }
 
         /// <summary>
-        /// Extract claims from an expired token
+        /// Validates expired token and extracts principal
         /// </summary>
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            try
+            return tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
-                var validationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = _config["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = _config["Jwt:Audience"],
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(_config["Jwt:Key"])), // Signing key
-                    ValidateLifetime = false, // Allow validation of expired token
-                    ClockSkew = TimeSpan.Zero, // No time sync relaxation
-                    NameClaimType = JwtRegisteredClaimNames.Sub,
-                    RoleClaimType = ClaimTypes.Role // ✅ Recognize role claim
-                };
+                ValidateIssuer = true,
+                ValidIssuer = _config["Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = _config["Jwt:Audience"],
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = _signingKey,
+                ValidateLifetime = false, // Allow expired tokens
+                ClockSkew = TimeSpan.Zero,
 
-                return tokenHandler.ValidateToken(token, validationParameters, out _);
-            }
-            catch (SecurityTokenValidationException ex)
-            {
-                throw new SecurityTokenException("Invalid token structure", ex);
-            }
-            catch (Exception ex)
-            {
-                throw new SecurityTokenException("Token validation failed", ex);
-            }
+                // Critical claim type configuration
+                NameClaimType = ClaimTypes.NameIdentifier,
+                RoleClaimType = "role" // ✅ Matches claim type used in token creation
+            }, out _);
         }
     }
 }

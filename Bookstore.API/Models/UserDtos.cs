@@ -33,7 +33,7 @@ namespace Bookstore.API.Models
 
         // 👇 Role optional hai, default value "User" hai, aur max 20 characters tak allowed hai
         [StringLength(20, ErrorMessage = "Role cannot exceed 20 characters")]
-        public string? Role { get; set; } = "User";  // Default value
+        public string? Role { get; set; } = "USER";  // Default value
     }
 
     public class UserLoginDto

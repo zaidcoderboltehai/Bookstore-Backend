@@ -20,7 +20,7 @@ namespace Bookstore.API.Controllers
     [ApiController]
     [Route("[controller]")]
     // Only users with either "User" or "Admin" roles can access this controller
-    [Authorize(Roles = "User,Admin")]
+    [Authorize(Roles = "User,ADMIN")]
     public class UsersController : ControllerBase
     {
         // Injected dependencies

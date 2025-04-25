@@ -1,4 +1,4 @@
-﻿// Bookstore.Data/Entities/Cart.cs
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Bookstore.Data.Entities
@@ -15,15 +15,21 @@ namespace Bookstore.Data.Entities
         public int BookId { get; set; }
 
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; set; } = 1;
 
         [Required]
+        [DataType(DataType.Currency)]
         public decimal PricePerUnit { get; set; }
 
         [Required]
         public bool IsPurchased { get; set; } = false;
 
+        [Required]
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
+
+        // Nullable until purchased
+        public DateTime? PurchasedAt { get; set; }
 
         // Navigation properties
         public User User { get; set; }

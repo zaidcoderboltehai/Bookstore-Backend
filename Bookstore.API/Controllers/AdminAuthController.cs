@@ -16,7 +16,7 @@ namespace Bookstore.API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     public class AdminAuthController : ControllerBase
     {
         private readonly IAdminAuthService _authService;
@@ -58,7 +58,7 @@ namespace Bookstore.API.Controllers
                     LastName = request.LastName.Trim(),
                     Email = request.Email.ToLower().Trim(),
                     SecretKey = request.SecretKey,
-                    Role = "Admin"
+                    Role = "ADMIN"
                 };
 
                 var createdAdmin = await _authService.Register(admin, request.Password, request.SecretKey);
@@ -109,7 +109,7 @@ namespace Bookstore.API.Controllers
                     Token = refreshToken,
                     Expires = DateTime.UtcNow.AddDays(7),
                     UserId = admin.Id,
-                    UserType = "Admin"
+                    UserType = "ADMIN"
                 });
 
                 return Ok(new
@@ -142,7 +142,7 @@ namespace Bookstore.API.Controllers
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
                 var userType = principal.FindFirst("UserType")?.Value;
 
-                if (userType != "Admin")
+                if (userType != "ADMIN")
                     throw new SecurityTokenException("Invalid token type");
 
                 var adminIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -163,7 +163,7 @@ namespace Bookstore.API.Controllers
                     Token = newRefreshToken,
                     Expires = DateTime.UtcNow.AddDays(7),
                     UserId = adminId,
-                    UserType = "Admin"
+                    UserType = "ADMIN"
                 });
 
                 return Ok(new
