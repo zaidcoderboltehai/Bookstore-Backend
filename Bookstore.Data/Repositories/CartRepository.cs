@@ -47,5 +47,16 @@ namespace Bookstore.Data.Repositories
                     c.UserId == userId &&
                     c.BookId == bookId &&
                     !c.IsPurchased);
+
+        public Task<bool> ExistsPurchasedAsync(int userId, int bookId) =>
+            _context.Carts.AnyAsync(c => c.UserId == userId
+                                      && c.BookId == bookId
+                                      && c.IsPurchased);
+
+        public async Task<IEnumerable<Cart>> GetAllCartItemsAsync(int userId)
+            => await _context.Carts
+                .Where(c => c.UserId == userId)
+                .Include(c => c.Book)
+                .ToListAsync();
     }
 }

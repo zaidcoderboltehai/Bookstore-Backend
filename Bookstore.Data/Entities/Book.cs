@@ -26,7 +26,8 @@ namespace Bookstore.Data.Entities
         public int AdminId { get; set; }
         public Admin? Admin { get; set; }
 
-        // ✅ Added navigation property for Cart relationship
+        // Navigation properties
         public ICollection<Cart> Carts { get; set; } = new List<Cart>();
+        public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
     }
 }

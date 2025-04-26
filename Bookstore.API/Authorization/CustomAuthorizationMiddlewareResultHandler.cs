@@ -8,12 +8,8 @@ using System.Threading.Tasks;
 
 namespace Bookstore.API.Authorization
 {
-    /// <summary>
-    /// Custom handler to process authorization results and return custom error messages for forbidden requests.
-    /// </summary>
     public class CustomAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewareResultHandler
     {
-        // Use the default handler for fallback
         private readonly AuthorizationMiddlewareResultHandler _defaultHandler = new();
 
         public async Task HandleAsync(
@@ -22,10 +18,16 @@ namespace Bookstore.API.Authorization
             AuthorizationPolicy policy,
             PolicyAuthorizationResult authorizeResult)
         {
-            // Check if the request is forbidden and the user is authenticated
-            if (authorizeResult.Forbidden && context.User.Identity.IsAuthenticated)
+            // ✅ Pehle non-forbidden requests ko default handler ko dedo
+            if (!authorizeResult.Forbidden)
             {
-                // Extract the required roles from the authorization policy
+                await _defaultHandler.HandleAsync(next, context, policy, authorizeResult);
+                return;
+            }
+
+            // Custom handling sirf forbidden requests ke liye
+            if (context.User.Identity.IsAuthenticated)
+            {
                 var requiredRoles = policy.Requirements
                     .OfType<RolesAuthorizationRequirement>()
                     .SelectMany(r => r.AllowedRoles)
@@ -34,7 +36,6 @@ namespace Bookstore.API.Authorization
 
                 if (requiredRoles.Any())
                 {
-                    // Return a custom 403 Forbidden response with a JSON payload
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsJsonAsync(new
@@ -47,7 +48,7 @@ namespace Bookstore.API.Authorization
                 }
             }
 
-            // Fallback to the default handler for all other scenarios
+            // Fallback for other forbidden scenarios
             await _defaultHandler.HandleAsync(next, context, policy, authorizeResult);
         }
     }

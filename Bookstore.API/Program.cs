@@ -1,44 +1,49 @@
-using System.Net;
-using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Bookstore.API.Authorization;
+using Bookstore.Business.Interfaces;
+using Bookstore.Business.Services;
 using Bookstore.Data;
 using Bookstore.Data.Interfaces;
 using Bookstore.Data.Repositories;
-using Bookstore.Business.Interfaces;
-using Bookstore.Business.Services;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Cors;
-using Bookstore.API.Authorization;
-using Microsoft.AspNetCore.Authorization;
+using Bookstore.API.Swagger;
 
+// Initialize the web application builder
 var builder = WebApplication.CreateBuilder(args);
 
-// =============================================
-// Service Registrations
-// =============================================
-builder.Services.AddControllers();
+// ==================== SERVICE REGISTRATIONS ====================
 
-// Add custom authorization handler
-builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
+// Configure controllers with JSON serialization options
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Prevent reference loops in object graphs
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        // Omit null values from JSON responses
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 
-// CORS Configuration
+// CORS Configuration - Allow all origins for development
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllPolicy", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
@@ -49,24 +54,26 @@ builder.Services.AddCors(options =>
 // Database Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
+    // Use SQL Server with connection string from appsettings
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("Bookstore.Data")
-    );
+        b => b.MigrationsAssembly("Bookstore.Data"));
 
+    // Enable detailed logging in development environment
     if (builder.Environment.IsDevelopment())
     {
-        options.LogTo(
-            message => Console.WriteLine($"DB Query: {message}"),
-            LogLevel.Information
-        ).EnableDetailedErrors();
+        options.LogTo(Console.WriteLine, LogLevel.Information)
+               .EnableDetailedErrors();
     }
 });
 
-// Configure API behavior
+// Configure API behavior for validation errors
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
+    // Disable automatic model state validation
     options.SuppressModelStateInvalidFilter = true;
+
+    // Custom response for invalid model state
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
@@ -75,22 +82,19 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                 .Select(e => new
                 {
                     Field = kvp.Key,
-                    Message = !string.IsNullOrEmpty(e.ErrorMessage)
-                        ? e.ErrorMessage
-                        : "Invalid value format"
-                }))
-            .ToList();
+                    Message = e.ErrorMessage ?? "Invalid format"
+                }));
 
         return new BadRequestObjectResult(new
         {
             Status = "ValidationError",
             Errors = errors,
-            Solution = "Check validation rules"
+            Solution = "Check API docs"
         });
     };
 });
 
-// JWT Authentication
+// JWT Authentication Configuration
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -104,81 +108,96 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-            NameClaimType = JwtRegisteredClaimNames.Sub,
+            ClockSkew = TimeSpan.FromMinutes(5),
+
+            // Configure claim types for ASP.NET Core Identity integration
+            NameClaimType = ClaimTypes.NameIdentifier,
             RoleClaimType = ClaimTypes.Role
         };
     });
 
-// Dependency Injection
+// Dependency Injection Registrations
+
+// Data Access Layer (Repositories)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-builder.Services.AddScoped<IUserAuthService, UserAuthService>();
-builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
-builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IBookRepository, BookRepository>();
-builder.Services.AddScoped<IBookService, BookService>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
-builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 
-// Swagger Configuration
+// Business Layer (Services)
+builder.Services.AddScoped<IUserAuthService, UserAuthService>();
+builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+// Swagger/OpenAPI Configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bookstore API", Version = "v1" });
+    // Enable file upload support in Swagger
+    c.OperationFilter<FileUploadOperationFilter>();
 
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // API documentation metadata
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Description = "JWT Authorization header",
-        Name = "Authorization",
+        Title = "Bookstore API",
+        Version = "v1",
+        Description = "Comprehensive API for managing books, users, admins, carts, and wishlists"
+    });
+
+    // JWT Bearer authentication configuration for Swagger
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "JWT Auth",
+        Description = "Enter JWT Bearer token",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
-        BearerFormat = "JWT"
-    });
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = JwtBearerDefaults.AuthenticationScheme
+        }
+    };
 
+    c.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        { securityScheme, Array.Empty<string>() }
     });
 });
 
+// Build the application
 var app = builder.Build();
 
-// =============================================
-// Middleware Pipeline
-// =============================================
+// ================= MIDDLEWARE PIPELINE CONFIGURATION =================
 
-// Modified JSON Content Check with exclusions
+// Conditional middleware for JSON content validation
 app.UseWhen(context =>
     context.Request.Method is "POST" or "PUT" or "PATCH" &&
-    // Exclude these endpoints from JSON content type check
+    // Exclude endpoints that don't require JSON bodies
     !context.Request.Path.StartsWithSegments("/api/Books/import") &&
-    !context.Request.Path.StartsWithSegments("/api/Cart"),
+    !context.Request.Path.StartsWithSegments("/api/Cart") &&
+    !context.Request.Path.StartsWithSegments("/api/Wishlist"),
 appBuilder =>
 {
     appBuilder.Use(async (context, next) =>
     {
+        // Validate content type for supported HTTP methods
         if (!context.Request.HasJsonContentType())
         {
             context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
             await context.Response.WriteAsJsonAsync(new
             {
-                Status = "Error",
-                Message = "JSON format required",
-                SupportedTypes = new[] { "application/json" }
+                ErrorCode = "MEDIA-001",
+                Message = "JSON format required"
             });
             return;
         }
@@ -186,10 +205,10 @@ appBuilder =>
     });
 });
 
-// Global Error Handling
-app.UseExceptionHandler(errorApp =>
+// Global exception handling middleware
+app.UseExceptionHandler(handler =>
 {
-    errorApp.Run(async context =>
+    handler.Run(async context =>
     {
         context.Response.ContentType = "application/json";
         var error = context.Features.Get<IExceptionHandlerFeature>();
@@ -198,38 +217,29 @@ app.UseExceptionHandler(errorApp =>
         {
             StatusCode = context.Response.StatusCode,
             Message = "Request failed",
-            Detailed = app.Environment.IsDevelopment() ? error?.Error.Message : null,
-            Solutions = new[] {
-                "Check input format",
-                "Verify fields",
-                "Check API docs"
-            }
+            Debug = app.Environment.IsDevelopment() ? error?.Error.Message : null
         });
     });
 });
 
-// Swagger UI
+// Swagger UI configuration (development only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bookstore API v1");
-        c.RoutePrefix = "swagger";
-        c.DocumentTitle = "API Docs";
+        c.EnableTryItOutByDefault(); // Enable interactive features
     });
 }
 
-// Middleware Order
-app.UseHttpsRedirection();
-app.UseRouting();
+// Core application middleware
+app.UseHttpsRedirection();       // Enforce HTTPS
+app.UseRouting();                // Enable endpoint routing
+app.UseCors("AllowAll");         // Apply CORS policy
+app.UseAuthentication();         // Enable authentication
+app.UseAuthorization();          // Enable authorization
+app.MapControllers();            // Map controller endpoints
 
-// CORS Middleware
-app.UseCors("AllowAllPolicy");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
+// Start the application
 app.Run();

@@ -134,6 +134,9 @@ namespace Bookstore.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("PurchasedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -230,6 +233,33 @@ namespace Bookstore.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Bookstore.Data.Entities.Wishlist", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.HasIndex("UserId", "BookId")
+                        .IsUnique();
+
+                    b.ToTable("Wishlists");
+                });
+
             modelBuilder.Entity("Bookstore.Data.Entities.Book", b =>
                 {
                     b.HasOne("Bookstore.Data.Entities.Admin", "Admin")
@@ -260,14 +290,37 @@ namespace Bookstore.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Bookstore.Data.Entities.Wishlist", b =>
+                {
+                    b.HasOne("Bookstore.Data.Entities.Book", "Book")
+                        .WithMany("Wishlists")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bookstore.Data.Entities.User", "User")
+                        .WithMany("Wishlists")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Bookstore.Data.Entities.Book", b =>
                 {
                     b.Navigation("Carts");
+
+                    b.Navigation("Wishlists");
                 });
 
             modelBuilder.Entity("Bookstore.Data.Entities.User", b =>
                 {
                     b.Navigation("Carts");
+
+                    b.Navigation("Wishlists");
                 });
 #pragma warning restore 612, 618
         }

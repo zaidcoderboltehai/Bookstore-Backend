@@ -14,7 +14,7 @@ namespace Bookstore.Data.Repositories
 
         public BookRepository(AppDbContext context) => _context = context;
 
-        // Add new book
+        // ✅ CRUD Operations
         public async Task<Book> AddAsync(Book book)
         {
             _context.Books.Add(book);
@@ -22,22 +22,25 @@ namespace Bookstore.Data.Repositories
             return book;
         }
 
-        // Get all books
+        // 🆕 Bulk Add for CSV Import
+        public async Task AddRangeAsync(IEnumerable<Book> books)
+        {
+            await _context.Books.AddRangeAsync(books);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<IEnumerable<Book>> GetAllAsync()
             => await _context.Books.ToListAsync();
 
-        // Get book by ID
         public async Task<Book?> GetByIdAsync(int id)
             => await _context.Books.FindAsync(id);
 
-        // Update existing book
         public async Task UpdateAsync(Book book)
         {
             _context.Books.Update(book);
             await _context.SaveChangesAsync();
         }
 
-        // Delete book by ID
         public async Task DeleteAsync(int id)
         {
             var book = await _context.Books.FindAsync(id);
@@ -48,21 +51,17 @@ namespace Bookstore.Data.Repositories
             }
         }
 
-        // ✅ Correct Case-Sensitive Search
+        // ✅ Search/Sort/Utilities
         public async Task<IEnumerable<Book>> SearchByAuthorAsync(string author)
-        {
-            return await _context.Books
+            => await _context.Books
                 .Where(b => EF.Functions.Collate(b.Author, "SQL_Latin1_General_CP1_CS_AS") == author)
                 .ToListAsync();
-        }
 
-        // Sort books by price (asc/desc)
         public async Task<IEnumerable<Book>> SortByPriceAsync(bool ascending = true)
-            => ascending ?
-                await _context.Books.OrderBy(b => b.Price).ToListAsync() :
-                await _context.Books.OrderByDescending(b => b.Price).ToListAsync();
+            => ascending
+                ? await _context.Books.OrderBy(b => b.Price).ToListAsync()
+                : await _context.Books.OrderByDescending(b => b.Price).ToListAsync();
 
-        // Get recent books (sorted by creation date)
         public async Task<IEnumerable<Book>> GetRecentAsync(int count)
             => await _context.Books
                 .OrderByDescending(b => b.CreatedAt)

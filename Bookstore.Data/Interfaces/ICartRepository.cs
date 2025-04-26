@@ -12,5 +12,11 @@ namespace Bookstore.Data.Interfaces
         Task<Cart> GetByIdAsync(int id);
         Task<IEnumerable<Cart>> GetUserCartAsync(int userId);
         Task<Cart> GetByUserAndBookAsync(int userId, int bookId);
+
+        // Naya method: check if a user already purchased a specific book
+        Task<bool> ExistsPurchasedAsync(int userId, int bookId);
+
+        // Naya method: get all cart items including purchased ones
+        Task<IEnumerable<Cart>> GetAllCartItemsAsync(int userId);
     }
 }

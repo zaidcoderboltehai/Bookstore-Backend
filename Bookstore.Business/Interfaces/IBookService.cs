@@ -11,7 +11,7 @@ namespace Bookstore.Business.Interfaces
         Task<Book> AddBookAsync(Book book);
 
         // Bulk Import
-        Task ImportBooksFromCsvAsync(Stream fileStream, int adminId);
+        Task<int> ImportBooksFromCsvAsync(Stream fileStream, int adminId); // ✅ Fixed return type
 
         // Read
         Task<IEnumerable<Book>> GetAllBooksAsync();

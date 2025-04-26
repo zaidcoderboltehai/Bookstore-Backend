@@ -15,7 +15,8 @@ namespace Bookstore.Data
         public DbSet<Book> Books { get; set; } = null!;
         public DbSet<PasswordReset> PasswordResets { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-        public DbSet<Cart> Carts { get; set; } = null!; // New Cart DbSet
+        public DbSet<Cart> Carts { get; set; } = null!;
+        public DbSet<Wishlist> Wishlists { get; set; } = null!; // New Wishlist DbSet
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -58,6 +59,22 @@ namespace Bookstore.Data
 
                 entity.Property(c => c.PricePerUnit)
                     .HasPrecision(18, 2);
+            });
+
+            // Wishlist Configuration
+            modelBuilder.Entity<Wishlist>(entity =>
+            {
+                entity.HasIndex(w => new { w.UserId, w.BookId }).IsUnique();
+
+                entity.HasOne(w => w.User)
+                    .WithMany(u => u.Wishlists)
+                    .HasForeignKey(w => w.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(w => w.Book)
+                    .WithMany(b => b.Wishlists)
+                    .HasForeignKey(w => w.BookId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
