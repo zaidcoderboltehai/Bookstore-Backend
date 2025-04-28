@@ -24,8 +24,9 @@ namespace Bookstore.Business.Services
             if (book == null)
                 throw new ArgumentException("Book not found");
 
+            // ✅ Updated error message for clarity
             if (await _wishlistRepo.BookExistsInWishlist(userId, bookId))
-                throw new InvalidOperationException("Book already in wishlist");
+                throw new InvalidOperationException("This book is already in your wishlist");
 
             var wishlistItem = new Wishlist
             {

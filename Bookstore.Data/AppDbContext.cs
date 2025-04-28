@@ -10,41 +10,46 @@ namespace Bookstore.Data
         {
         }
 
-        public DbSet<User> Users { get; set; } = null!;
-        public DbSet<Admin> Admins { get; set; } = null!;
-        public DbSet<Book> Books { get; set; } = null!;
-        public DbSet<PasswordReset> PasswordResets { get; set; } = null!;
-        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-        public DbSet<Cart> Carts { get; set; } = null!;
-        public DbSet<Wishlist> Wishlists { get; set; } = null!; // New Wishlist DbSet
+        // Database Tables
+        public DbSet<User> Users { get; set; }
+        public DbSet<Admin> Admins { get; set; }
+        public DbSet<Book> Books { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<Wishlist> Wishlists { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<PasswordReset> PasswordResets { get; set; }
+        public DbSet<CustomerAddress> CustomerAddresses { get; set; }
+        public DbSet<OrderSummary> OrderSummaries { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // RefreshToken Configuration
-            modelBuilder.Entity<RefreshToken>(entity =>
+            //----------- User Config ------------
+            modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(rt => rt.Token).IsUnique();
-                entity.Property(rt => rt.Expires).IsRequired();
+                entity.HasIndex(u => u.Email).IsUnique();
             });
 
-            // Book Configuration
+            //----------- Admin Config -----------
+            modelBuilder.Entity<Admin>(entity =>
+            {
+                entity.HasIndex(a => a.Email).IsUnique();
+                entity.HasIndex(a => a.ExternalId).IsUnique();
+            });
+
+            //----------- Book Config ------------
             modelBuilder.Entity<Book>(entity =>
             {
-                // Decimal Precision Settings
-                entity.Property(b => b.Price)
-                    .HasPrecision(18, 2);
+                entity.Property(b => b.Price).HasPrecision(18, 2);
+                entity.Property(b => b.DiscountPrice).HasPrecision(18, 2);
 
-                entity.Property(b => b.DiscountPrice)
-                    .HasPrecision(18, 2);
-
-                // Relationship with Admin
                 entity.HasOne(b => b.Admin)
                     .WithMany()
                     .HasForeignKey(b => b.AdminId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Cart Configuration
+            //----------- Cart Config ------------
             modelBuilder.Entity<Cart>(entity =>
             {
                 entity.HasOne(c => c.User)
@@ -55,13 +60,10 @@ namespace Bookstore.Data
                 entity.HasOne(c => c.Book)
                     .WithMany(b => b.Carts)
                     .HasForeignKey(c => c.BookId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.Property(c => c.PricePerUnit)
-                    .HasPrecision(18, 2);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Wishlist Configuration
+            //----------- Wishlist Config --------
             modelBuilder.Entity<Wishlist>(entity =>
             {
                 entity.HasIndex(w => new { w.UserId, w.BookId }).IsUnique();
@@ -75,6 +77,58 @@ namespace Bookstore.Data
                     .WithMany(b => b.Wishlists)
                     .HasForeignKey(w => w.BookId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            //----------- Address Config --------
+            modelBuilder.Entity<CustomerAddress>(entity =>
+            {
+                entity.HasOne(ca => ca.User)
+                    .WithMany(u => u.CustomerAddresses)
+                    .HasForeignKey(ca => ca.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            //----------- Order Config -----------
+            modelBuilder.Entity<OrderSummary>(entity =>
+            {
+                // Fixed Cascade Conflict
+                entity.HasOne(os => os.User)
+                    .WithMany(u => u.Orders)
+                    .HasForeignKey(os => os.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(os => os.CustomerAddress)
+                    .WithMany()
+                    .HasForeignKey(os => os.CustomerAddressId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(os => os.TotalAmount)
+                    .HasPrecision(18, 2);
+            });
+
+            //----------- Order Item Config ------
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasOne(oi => oi.Order)
+                    .WithMany(o => o.OrderItems)
+                    .HasForeignKey(oi => oi.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(oi => oi.Book)
+                    .WithMany(b => b.OrderItems)
+                    .HasForeignKey(oi => oi.BookId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            //----------- Other Configs ----------
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasIndex(rt => rt.Token).IsUnique();
+            });
+
+            modelBuilder.Entity<PasswordReset>(entity =>
+            {
+                entity.HasKey(pr => pr.Token);
             });
         }
     }

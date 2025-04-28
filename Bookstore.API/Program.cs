@@ -127,6 +127,10 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 
+// ?? New Repositories for Address & Order Management
+builder.Services.AddScoped<ICustomerAddressRepository, CustomerAddressRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 // Business Layer (Services)
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
@@ -135,6 +139,10 @@ builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+// ?? New Services for Address & Order Management
+builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // Swagger/OpenAPI Configuration
 builder.Services.AddEndpointsApiExplorer();
@@ -148,7 +156,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Bookstore API",
         Version = "v1",
-        Description = "Comprehensive API for managing books, users, admins, carts, and wishlists"
+        Description = "Comprehensive API for managing books, users, admins, carts, wishlists, addresses, and orders"
     });
 
     // JWT Bearer authentication configuration for Swagger

@@ -53,9 +53,23 @@ namespace Bookstore.API.Controllers
                     Price = wishlistItem.Book.Price
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                // Handle duplicate book error
+                return BadRequest(new
+                {
+                    Status = "Conflict",
+                    Message = ex.Message
+                });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                // Generic error handler
+                return BadRequest(new
+                {
+                    Status = "Error",
+                    Message = ex.Message
+                });
             }
         }
 
@@ -72,6 +86,15 @@ namespace Bookstore.API.Controllers
         {
             var userId = GetUserId();
             var wishlistItems = await _wishlistService.GetWishlistAsync(userId);
+
+            if (!wishlistItems.Any())
+            {
+                return Ok(new
+                {
+                    Message = "Wishlist is empty",
+                    Suggestion = "Browse books at /api/Books"
+                });
+            }
 
             var response = wishlistItems.Select(w => new WishlistResponseDto
             {

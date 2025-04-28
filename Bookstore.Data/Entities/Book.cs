@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Bookstore.Data.Entities
 {
@@ -29,5 +30,6 @@ namespace Bookstore.Data.Entities
         // Navigation properties
         public ICollection<Cart> Carts { get; set; } = new List<Cart>();
         public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
