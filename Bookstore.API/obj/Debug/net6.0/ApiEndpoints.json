@@ -620,22 +620,6 @@
   },
   {
     "ContainingType": "Bookstore.API.Controllers.UsersController",
-    "Method": "GetById",
-    "RelativePath": "Users/{id}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Bookstore.API.Controllers.UsersController",
     "Method": "ForgotPassword",
     "RelativePath": "Users/forgot-password",
     "HttpMethod": "POST",

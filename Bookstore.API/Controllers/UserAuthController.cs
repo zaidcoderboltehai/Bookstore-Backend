@@ -1,5 +1,4 @@
-﻿// Required namespaces for controller, authentication, models, interfaces, etc.
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
@@ -16,14 +15,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Bookstore.API.Controllers
 {
-    // This controller handles the API endpoints
     [ApiController]
-    [Route("[controller]")]
-    // Only users with either "User" or "Admin" roles can access this controller
+    [Route("Users")] // ✅ Fixed route to match frontend calls
     [Authorize(Roles = "User,ADMIN")]
     public class UsersController : ControllerBase
     {
-        // Injected dependencies
         private readonly IUserRepository _repo;
         private readonly IUserAuthService _authService;
         private readonly ITokenService _tokenService;
@@ -31,7 +27,6 @@ namespace Bookstore.API.Controllers
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IHostEnvironment _environment;
 
-        // Constructor - injecting all services
         public UsersController(
             IUserRepository repo,
             IUserAuthService authService,
@@ -48,7 +43,7 @@ namespace Bookstore.API.Controllers
             _environment = environment;
         }
 
-        // Endpoint to retrieve all users
+        // ---------------------- Get All Users ----------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -56,54 +51,13 @@ namespace Bookstore.API.Controllers
             return Ok(new
             {
                 Count = users.Count(),
-                Results = users.Select(u => new
-                {
-                    u.Id,
-                    u.Email,
-                    u.Role,
-                    Name = $"{u.FirstName} {u.LastName}"
-                })
+                Results = users.Select(u => new { u.Id, u.Email, u.Role })
             });
         }
 
-        // Endpoint to retrieve a specific user by ID
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var user = await _repo.GetUserByIdAsync(id);
-            if (user == null) return NotFound(new
-            {
-                Status = "NotFound",
-                Error = "User not found",
-                Id = id
-            });
-
-            return Ok(new
-            {
-                User = new
-                {
-                    user.Id,
-                    user.Email,
-                    user.Role,
-                    user.FirstName,
-                    user.LastName
-                },
-                Links = new
-                {
-                    // Self-link for HATEOAS
-                    Self = Url.ActionLink(
-                        action: nameof(GetById),
-                        controller: "Users",
-                        values: new { id },
-                        protocol: Request.Scheme
-                    )!
-                }
-            });
-        }
-
-        // Endpoint to register a new user
+        // ---------------------- User Registration ----------------------
         [HttpPost("register")]
-        [AllowAnonymous] // Accessible publicly
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
         {
             try
@@ -118,32 +72,16 @@ namespace Bookstore.API.Controllers
 
                 await _authService.Register(user, dto.Password);
                 AuditLog($"User registered: {user.Email}");
-
-                return Ok(new
-                {
-                    Status = "Success",
-                    UserId = user.Id,
-                    NextSteps = new[] {
-                        "Check email for verification",
-                        "Login with credentials"
-                    }
-                });
+                return Ok(new { Status = "Success", UserId = user.Id });
             }
             catch (Exception ex)
             {
                 AuditLog($"Registration failed: {ex.Message}");
-                return Conflict(new
-                {
-                    Status = "Error",
-                    ErrorType = "RegistrationError",
-                    UserMessage = "Registration failed. Please check your details.",
-                    Technical = _environment.IsDevelopment() ? ex.Message : null,
-                    ErrorCode = "USER-REG-100"
-                });
+                return Conflict(new { Error = "RegistrationFailed", Message = ex.Message });
             }
         }
 
-        // Endpoint to authenticate/login a user
+        // ---------------------- User Login ----------------------
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
@@ -165,73 +103,36 @@ namespace Bookstore.API.Controllers
                 });
 
                 AuditLog($"Successful login: {user.Id}");
-
                 return Ok(new
                 {
-                    Status = "Authenticated",
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    ExpiresIn = 1800, // 30 minutes
-                    UserInfo = new
-                    {
-                        user.Id,
-                        user.Email,
-                        user.Role,
-                        FullName = $"{user.FirstName} {user.LastName}"
-                    }
+                    ExpiresIn = 1800,
+                    UserId = user.Id
                 });
             }
             catch (Exception ex)
             {
                 AuditLog($"Login failed: {dto.Email} - {ex.Message}");
-                return Unauthorized(new
-                {
-                    Status = "AuthFailed",
-                    UserMessage = "Invalid email/password",
-                    DebugInfo = _environment.IsDevelopment() ? ex.Message : null,
-                    ErrorCode = "USER-AUTH-200"
-                });
+                return Unauthorized(new { Error = "LoginFailed", Message = "Invalid email/password" });
             }
         }
 
-        // Endpoint to refresh token
+        // ---------------------- Refresh Token ----------------------
         [HttpPost("refresh-token")]
         [AllowAnonymous]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             try
             {
-                AuditLog($"Refresh token attempt from: {Request.HttpContext.Connection.RemoteIpAddress}");
-
                 var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
-
-                var userTypeClaim = principal.FindFirst("UserType")?.Value;
-                if (userTypeClaim != "User")
-                {
-                    AuditLog($"Invalid user type attempt: {userTypeClaim}");
-                    throw new SecurityTokenException("Invalid token type for user");
-                }
-
-                var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ??
-                                principal.FindFirst(ClaimTypes.NameIdentifier);
-
-                if (!int.TryParse(userIdClaim?.Value, out var userId))
-                {
-                    AuditLog("Invalid user ID format in token");
-                    throw new SecurityTokenException("Invalid user identifier");
-                }
+                var userId = int.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
                 var storedToken = await _refreshTokenRepo.FindByTokenAsync(request.RefreshToken);
-                if (storedToken == null ||
-                    storedToken.UserId != userId ||
-                    storedToken.UserType != "User" ||
-                    storedToken.Expires < DateTime.UtcNow)
-                {
-                    AuditLog($"Invalid refresh token for user {userId}");
-                    throw new SecurityTokenException("Invalid or expired refresh token");
-                }
+                if (storedToken == null || storedToken.UserId != userId || storedToken.Expires < DateTime.UtcNow)
+                    return BadRequest(new { Error = "InvalidToken", Message = "Invalid/expired refresh token" });
 
-                var newAccessToken = _tokenService.CreateToken(principal.Claims);
+                var newAccessToken = _tokenService.CreateTokenFromClaims(principal.Claims);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
                 await _refreshTokenRepo.DeleteAsync(storedToken.Id);
@@ -243,46 +144,21 @@ namespace Bookstore.API.Controllers
                     UserType = "User"
                 });
 
-                AuditLog($"Tokens refreshed for user {userId}");
-
                 return Ok(new
                 {
-                    Status = "TokenRefreshed",
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken,
-                    ExpiresIn = 1800,
-                    UserInfo = new
-                    {
-                        UserId = userId,
-                        UserType = "User"
-                    }
-                });
-            }
-            catch (SecurityTokenException ex)
-            {
-                AuditLog($"Token error: {ex.Message}");
-                return Unauthorized(new
-                {
-                    Status = "TokenError",
-                    ErrorCode = "TOKEN-1001",
-                    UserMessage = "Invalid token",
-                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
+                    ExpiresIn = 1800
                 });
             }
             catch (Exception ex)
             {
-                AuditLog($"Refresh token failure: {ex}");
-                return StatusCode(500, new
-                {
-                    Status = "ServerError",
-                    ErrorCode = "SRV-1001",
-                    UserMessage = "Token refresh failed",
-                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
-                });
+                AuditLog($"Token refresh failed: {ex.Message}");
+                return StatusCode(500, new { Error = "TokenRefreshFailed", Message = ex.Message });
             }
         }
 
-        // Endpoint to send forgot password instructions
+        // ---------------------- Forgot Password ----------------------
         [HttpPost("forgot-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
@@ -290,28 +166,17 @@ namespace Bookstore.API.Controllers
             try
             {
                 await _forgotService.SendUserForgotPasswordLink(dto.Email);
-                AuditLog($"Password reset requested: {dto.Email}");
-
-                return Ok(new
-                {
-                    Status = "InstructionsSent",
-                    Validity = "1 hour"
-                });
+                AuditLog($"Password reset link sent to: {dto.Email}");
+                return Ok(new { Status = "ResetLinkSent" });
             }
             catch (Exception ex)
             {
-                AuditLog($"Password reset failed: {dto.Email} - {ex.Message}");
-                return NotFound(new
-                {
-                    Status = "NotFound",
-                    UserMessage = "Email not registered",
-                    Technical = _environment.IsDevelopment() ? ex.Message : null,
-                    Solution = "Check email or register"
-                });
+                AuditLog($"Forgot password failed: {dto.Email} - {ex.Message}");
+                return BadRequest(new { Error = "ForgotPasswordFailed", Message = ex.Message });
             }
         }
 
-        // Endpoint to reset the password
+        // ---------------------- Reset Password ----------------------
         [HttpPost("reset-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
@@ -320,28 +185,16 @@ namespace Bookstore.API.Controllers
             {
                 await _forgotService.ResetPassword(dto.Token, dto.NewPassword);
                 AuditLog($"Password reset successful for token: {dto.Token}");
-
-                return Ok(new
-                {
-                    Status = "PasswordReset",
-                    Message = "Password updated successfully",
-                    NextSteps = "Login with new credentials"
-                });
+                return Ok(new { Status = "PasswordResetSuccess" });
             }
             catch (Exception ex)
             {
                 AuditLog($"Password reset failed: {dto.Token} - {ex.Message}");
-                return BadRequest(new
-                {
-                    Status = "Error",
-                    ErrorCode = "TOKEN-1002",
-                    UserMessage = "Invalid reset token",
-                    TechnicalDetails = _environment.IsDevelopment() ? ex.Message : null
-                });
+                return BadRequest(new { Error = "PasswordResetFailed", Message = ex.Message });
             }
         }
 
-        // Method to log audit messages to console
+        // ---------------------- Helper Method ----------------------
         private void AuditLog(string message)
         {
             Console.WriteLine($"[AUDIT] {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - {message}");

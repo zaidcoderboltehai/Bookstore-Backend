@@ -25,72 +25,59 @@ using Bookstore.Data.Repositories;
 using System.Security.Claims;
 using Bookstore.API.Swagger;
 
-// Initialize the web application builder
 var builder = WebApplication.CreateBuilder(args);
 
-// ==================== SERVICE REGISTRATIONS ====================
+// ==================== SERVICE REGISTRATION ====================
 
-// Configure controllers with JSON serialization options
+// Add Controllers with JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Prevent reference loops in object graphs
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        // Omit null values from JSON responses
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// CORS Configuration - Allow all origins for development
+// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
-// Database Configuration
+// Configure Database
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Use SQL Server with connection string from appsettings
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("Bookstore.Data"));
+        sqlOptions => sqlOptions.MigrationsAssembly("Bookstore.Data"));
 
-    // Enable detailed logging in development environment
     if (builder.Environment.IsDevelopment())
     {
-        options.LogTo(Console.WriteLine, LogLevel.Information)
-               .EnableDetailedErrors();
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+        options.LogTo(Console.WriteLine, LogLevel.Information);
     }
 });
 
-// Configure API behavior for validation errors
+// API Behavior Configuration
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    // Disable automatic model state validation
     options.SuppressModelStateInvalidFilter = true;
-
-    // Custom response for invalid model state
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
             .Where(e => e.Value.Errors.Count > 0)
-            .SelectMany(kvp => kvp.Value.Errors
-                .Select(e => new
-                {
-                    Field = kvp.Key,
-                    Message = e.ErrorMessage ?? "Invalid format"
-                }));
+            .SelectMany(kvp => kvp.Value.Errors.Select(e => new {
+                kvp.Key,
+                e.ErrorMessage
+            }));
 
-        return new BadRequestObjectResult(new
-        {
-            Status = "ValidationError",
-            Errors = errors,
-            Solution = "Check API docs"
-        });
+        return new BadRequestObjectResult(new { Errors = errors });
     };
 });
 
@@ -108,30 +95,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-            ClockSkew = TimeSpan.FromMinutes(5),
-
-            // Configure claim types for ASP.NET Core Identity integration
+            ClockSkew = TimeSpan.Zero,
             NameClaimType = ClaimTypes.NameIdentifier,
             RoleClaimType = ClaimTypes.Role
         };
     });
 
-// Dependency Injection Registrations
-
-// Data Access Layer (Repositories)
+// Repository Registrations
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
-builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
-
-// ?? New Repositories for Address & Order Management
 builder.Services.AddScoped<ICustomerAddressRepository, CustomerAddressRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 
-// Business Layer (Services)
+// Service Registrations
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -139,30 +120,23 @@ builder.Services.AddScoped<IForgotPasswordService, ForgotPasswordService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
-
-// ?? New Services for Address & Order Management
-builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
-// Swagger/OpenAPI Configuration
+// Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    // Enable file upload support in Swagger
-    c.OperationFilter<FileUploadOperationFilter>();
-
-    // API documentation metadata
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Bookstore API",
         Version = "v1",
-        Description = "Comprehensive API for managing books, users, admins, carts, wishlists, addresses, and orders"
+        Description = "Complete Bookstore Management API"
     });
 
-    // JWT Bearer authentication configuration for Swagger
+    // Add JWT Authentication to Swagger
     var securityScheme = new OpenApiSecurityScheme
     {
-        Name = "JWT Auth",
+        Name = "JWT Authentication",
         Description = "Enter JWT Bearer token",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
@@ -171,83 +145,78 @@ builder.Services.AddSwaggerGen(c =>
         Reference = new OpenApiReference
         {
             Type = ReferenceType.SecurityScheme,
-            Id = JwtBearerDefaults.AuthenticationScheme
+            Id = "Bearer"
         }
     };
 
-    c.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
+    c.AddSecurityDefinition("Bearer", securityScheme);
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        { securityScheme, Array.Empty<string>() }
+        { securityScheme, new[] { "Bearer" } }
     });
 });
 
-// Build the application
 var app = builder.Build();
 
-// ================= MIDDLEWARE PIPELINE CONFIGURATION =================
+// ==================== MIDDLEWARE PIPELINE ====================
 
-// Conditional middleware for JSON content validation
-app.UseWhen(context =>
-    context.Request.Method is "POST" or "PUT" or "PATCH" &&
-    // Exclude endpoints that don't require JSON bodies
-    !context.Request.Path.StartsWithSegments("/api/Books/import") &&
-    !context.Request.Path.StartsWithSegments("/api/Cart") &&
-    !context.Request.Path.StartsWithSegments("/api/Wishlist"),
-appBuilder =>
-{
-    appBuilder.Use(async (context, next) =>
+// Global Content Type Check
+app.UseWhen(context => context.Request.Method is "POST" or "PUT" or "PATCH",
+    appBuilder =>
     {
-        // Validate content type for supported HTTP methods
-        if (!context.Request.HasJsonContentType())
+        appBuilder.Use(async (context, next) =>
         {
-            context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
-            await context.Response.WriteAsJsonAsync(new
+            if (!context.Request.HasJsonContentType())
             {
-                ErrorCode = "MEDIA-001",
-                Message = "JSON format required"
-            });
-            return;
-        }
-        await next();
+                context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    Error = "JSON format required"
+                });
+                return;
+            }
+            await next();
+        });
     });
-});
 
-// Global exception handling middleware
-app.UseExceptionHandler(handler =>
+// Global Exception Handling
+app.UseExceptionHandler(errApp =>
 {
-    handler.Run(async context =>
+    errApp.Run(async context =>
     {
         context.Response.ContentType = "application/json";
-        var error = context.Features.Get<IExceptionHandlerFeature>();
+        var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
 
         await context.Response.WriteAsJsonAsync(new
         {
-            StatusCode = context.Response.StatusCode,
-            Message = "Request failed",
-            Debug = app.Environment.IsDevelopment() ? error?.Error.Message : null
+            Status = "Error",
+            Message = "An unexpected error occurred",
+            Detailed = app.Environment.IsDevelopment() ?
+                exceptionHandlerFeature?.Error.Message : null
         });
     });
 });
 
-// Swagger UI configuration (development only)
+// Development Specific Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bookstore API v1");
-        c.EnableTryItOutByDefault(); // Enable interactive features
+        c.DisplayRequestDuration();
     });
 }
 
-// Core application middleware
-app.UseHttpsRedirection();       // Enforce HTTPS
-app.UseRouting();                // Enable endpoint routing
-app.UseCors("AllowAll");         // Apply CORS policy
-app.UseAuthentication();         // Enable authentication
-app.UseAuthorization();          // Enable authorization
-app.MapControllers();            // Map controller endpoints
+// Standard Middlewares
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCors("AllowAll");
+app.UseAuthentication();
+app.UseAuthorization();
 
-// Start the application
+// Endpoint Configuration
+app.MapControllers();
+
+// Start Application
 app.Run();

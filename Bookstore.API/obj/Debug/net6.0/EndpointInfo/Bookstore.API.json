@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Bookstore API",
-    "description": "Comprehensive API for managing books, users, admins, carts, wishlists, addresses, and orders",
+    "description": "Complete Bookstore Management API",
     "version": "v1"
   },
   "paths": {
@@ -440,25 +440,60 @@
           "Books"
         ],
         "requestBody": {
-          "description": "CSV file upload for bulk import",
           "content": {
             "multipart/form-data": {
               "schema": {
-                "required": [
-                  "file"
-                ],
                 "type": "object",
                 "properties": {
-                  "file": {
-                    "type": "string",
-                    "description": "Select CSV file for import",
-                    "format": "binary"
+                  "ContentType": {
+                    "type": "string"
+                  },
+                  "ContentDisposition": {
+                    "type": "string"
+                  },
+                  "Headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "Length": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "Name": {
+                    "type": "string"
+                  },
+                  "FileName": {
+                    "type": "string"
                   }
+                }
+              },
+              "encoding": {
+                "ContentType": {
+                  "style": "form"
+                },
+                "ContentDisposition": {
+                  "style": "form"
+                },
+                "Headers": {
+                  "style": "form"
+                },
+                "Length": {
+                  "style": "form"
+                },
+                "Name": {
+                  "style": "form"
+                },
+                "FileName": {
+                  "style": "form"
                 }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -875,29 +910,6 @@
       "get": {
         "tags": [
           "Users"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/Users/{id}": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -1801,7 +1813,9 @@
   },
   "security": [
     {
-      "Bearer": [ ]
+      "Bearer": [
+        "Bearer"
+      ]
     }
   ]
 }
