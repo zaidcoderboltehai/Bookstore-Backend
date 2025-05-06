@@ -121,6 +121,7 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 
 // Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
