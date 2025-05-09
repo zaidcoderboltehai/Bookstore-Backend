@@ -364,6 +364,11 @@
         "Name": "bookId",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Bookstore.API.Controllers.AddToCartRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -432,7 +437,13 @@
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Bookstore.API.Controllers.PurchaseCartRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -587,6 +598,11 @@
       {
         "Name": "bookId",
         "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Bookstore.API.Controllers.AddToWishlistRequest",
         "IsRequired": true
       }
     ],

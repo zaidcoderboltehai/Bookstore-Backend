@@ -12,6 +12,12 @@ using Bookstore.Data.Interfaces;
 
 namespace Bookstore.API.Controllers
 {
+    // DTO for Add to Wishlist - future extensibility
+    public class AddToWishlistRequest
+    {
+        // Add fields here if needed later
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "USER")]
@@ -29,7 +35,10 @@ namespace Bookstore.API.Controllers
         private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
         [HttpPost("{bookId}")]
-        public async Task<IActionResult> AddToWishlist(int bookId)
+        public async Task<IActionResult> AddToWishlist(
+            int bookId,
+            [FromBody] AddToWishlistRequest req    // <-- body parameter added
+        )
         {
             try
             {
@@ -55,7 +64,6 @@ namespace Bookstore.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Handle duplicate book error
                 return BadRequest(new
                 {
                     Status = "Conflict",
@@ -64,7 +72,6 @@ namespace Bookstore.API.Controllers
             }
             catch (Exception ex)
             {
-                // Generic error handler
                 return BadRequest(new
                 {
                     Status = "Error",

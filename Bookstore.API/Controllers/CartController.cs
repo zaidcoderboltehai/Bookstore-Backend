@@ -9,6 +9,18 @@ using System;
 
 namespace Bookstore.API.Controllers
 {
+    // DTO for adding to cart
+    public class AddToCartRequest
+    {
+        public int Quantity { get; set; } = 1;
+    }
+
+    // DTO stub for purchase request
+    public class PurchaseCartRequest
+    {
+        // Extend in future if needed
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "USER")]
@@ -21,7 +33,7 @@ namespace Bookstore.API.Controllers
             _cartService = cartService;
         }
 
-        // Helper method to get current user ID from JWT
+        // Helper to get current user ID from JWT
         private int GetUserId() =>
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
@@ -44,27 +56,20 @@ namespace Bookstore.API.Controllers
             });
         }
 
-        // Get user's cart with book details, user info, total quantity, total price, and purchase flags
+        // Get user's cart
         [HttpGet]
         public async Task<IActionResult> GetCart()
         {
             var userId = GetUserId();
             var cartItems = await _cartService.GetCartAsync(userId);
 
-            // User details from JWT
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-
-            // calculate total quantity and total price
             var totalQty = cartItems.Sum(c => c.Quantity);
             var totalPrice = cartItems.Sum(c => c.Quantity * c.PricePerUnit);
 
             var response = new
             {
-                User = new
-                {
-                    Id = userId,
-                    Email = userEmail
-                },
+                User = new { Id = userId, Email = userEmail },
                 TotalQuantity = totalQty,
                 TotalPrice = totalPrice,
                 Items = cartItems.Select(c => new CartResponseDto
@@ -84,7 +89,7 @@ namespace Bookstore.API.Controllers
             return Ok(response);
         }
 
-        // Get only total quantity of items in cart
+        // Get only total quantity
         [HttpGet("total-quantity")]
         public async Task<IActionResult> GetTotalQuantity()
         {
@@ -97,8 +102,7 @@ namespace Bookstore.API.Controllers
         public async Task<IActionResult> GetFullCart()
         {
             var userId = GetUserId();
-            var cartItems = await _cartService.GetFullCartAsync(userId); // includes both purchased & non-purchased
-
+            var cartItems = await _cartService.GetFullCartAsync(userId);
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
             var response = new
@@ -121,17 +125,34 @@ namespace Bookstore.API.Controllers
             return Ok(response);
         }
 
-        // Add item to cart
+        // Add item to cart with quantity from body
         [HttpPost("{bookId}")]
-        public async Task<IActionResult> AddToCart(int bookId)
+        public async Task<IActionResult> AddToCart(
+            int bookId,
+            [FromBody] AddToCartRequest request
+        )
         {
-            await _cartService.AddToCartAsync(GetUserId(), bookId);
-            return Ok(new
+            try
             {
-                Message = "Item added to cart",
-                BookId = bookId,
-                Timestamp = DateTime.UtcNow
-            });
+                await _cartService.AddToCartAsync(GetUserId(), bookId);
+                return Ok(new
+                {
+                    Message = "Item added to cart",
+                    BookId = bookId,
+                    QuantityRequested = request.Quantity,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (InvalidOperationException ex)
+                when (ex.Message.Contains("already purchased"))
+            {
+                return Conflict(new
+                {
+                    Status = "Error",
+                    ErrorCode = "CART-ALREADY-PURCHASED",
+                    Message = "This book is already purchased."
+                });
+            }
         }
 
         // Update item quantity
@@ -156,7 +177,7 @@ namespace Bookstore.API.Controllers
             });
         }
 
-        // Remove item from cart
+        // Remove item
         [HttpDelete("{cartId}")]
         public async Task<IActionResult> RemoveFromCart(int cartId)
         {
@@ -164,14 +185,15 @@ namespace Bookstore.API.Controllers
             return NoContent();
         }
 
-        // Checkout cart with duplicate-check, then detailed response
+        // Checkout with body parameter stub
         [HttpPost("purchase")]
-        public async Task<IActionResult> PurchaseCart()
+        public async Task<IActionResult> PurchaseCart(
+            [FromBody] PurchaseCartRequest req   // <-- added this
+        )
         {
             var userId = GetUserId();
             var cartItems = await _cartService.GetCartAsync(userId);
 
-            // duplicate BookId check
             var dupGroup = cartItems
                            .Where(c => !c.IsPurchased)
                            .GroupBy(c => c.BookId)
