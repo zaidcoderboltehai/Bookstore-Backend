@@ -30,7 +30,10 @@ namespace Bookstore.Data.Repositories
         }
 
         public async Task<IEnumerable<Book>> GetAllAsync()
-            => await _context.Books.ToListAsync();
+        {
+            // Call the stored procedure
+            return await _context.Books.FromSqlRaw<Book>("EXEC GetAllBooks").ToListAsync();
+        }
 
         public async Task<Book?> GetByIdAsync(int id)
             => await _context.Books.FindAsync(id);
