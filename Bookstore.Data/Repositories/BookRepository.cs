@@ -1,6 +1,7 @@
 ﻿using Bookstore.Data.Entities;
 using Bookstore.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,13 @@ namespace Bookstore.Data.Repositories
     public class BookRepository : IBookRepository
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<BookRepository> _logger;
 
-        public BookRepository(AppDbContext context) => _context = context;
+        public BookRepository(AppDbContext context, ILogger<BookRepository> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
 
         // ✅ CRUD Operations
         public async Task<Book> AddAsync(Book book)
@@ -31,8 +37,28 @@ namespace Bookstore.Data.Repositories
 
         public async Task<IEnumerable<Book>> GetAllAsync()
         {
-            // Call the stored procedure
-            return await _context.Books.FromSqlRaw<Book>("EXEC GetAllBooks").ToListAsync();
+            try
+            {
+                _logger.LogInformation("Executing GetAllBooks stored procedure");
+
+                var books = await _context.Books
+                    .FromSqlRaw<Book>("EXEC GetAllBooks")
+                    .ToListAsync();
+
+                _logger.LogInformation("Successfully retrieved {BookCount} books", books.Count());
+
+                return books;
+            }
+            catch (Microsoft.Data.SqlClient.SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "SQL error in GetAllBooks: {ErrorMessage}", sqlEx.Message);
+                throw new InvalidOperationException($"Database error: {sqlEx.Message}", sqlEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAllBooks");
+                throw new ApplicationException("Error retrieving books", ex);
+            }
         }
 
         public async Task<Book?> GetByIdAsync(int id)

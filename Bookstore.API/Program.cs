@@ -37,6 +37,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Logging configuration add karo
+builder.Services.AddLogging(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+    config.SetMinimumLevel(LogLevel.Information);
+});
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {

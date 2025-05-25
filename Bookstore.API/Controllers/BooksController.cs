@@ -3,6 +3,7 @@ using Bookstore.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -16,18 +17,61 @@ namespace Bookstore.API.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IBookService _bookService;
+        private readonly ILogger<BooksController> _logger;
         private const int PageSize = 5;
 
-        public BooksController(IBookService bookService)
+        public BooksController(IBookService bookService, ILogger<BooksController> logger)
         {
             _bookService = bookService;
+            _logger = logger;
         }
 
         // Get all books (Admin or User)
         [HttpGet]
         [Authorize(Roles = "ADMIN,USER")]
         public async Task<IActionResult> GetAllBooks()
-            => Ok(await _bookService.GetAllBooksAsync());
+        {
+            try
+            {
+                _logger.LogInformation("GetAllBooks API called");
+
+                var books = await _bookService.GetAllBooksAsync();
+                var booksList = books.ToList();
+
+                _logger.LogInformation("Retrieved {BookCount} books successfully", booksList.Count);
+
+                return Ok(new
+                {
+                    Status = "Success",
+                    Message = $"Retrieved {booksList.Count} books successfully",
+                    Count = booksList.Count,
+                    Data = booksList,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Database error in GetAllBooks");
+                return StatusCode(500, new
+                {
+                    Status = "Error",
+                    ErrorCode = "BOOKS-DB-001",
+                    Message = "Database error occurred",
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAllBooks");
+                return StatusCode(500, new
+                {
+                    Status = "Error",
+                    ErrorCode = "BOOKS-GEN-002",
+                    Message = "An unexpected error occurred",
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+        }
 
         // Get single book by ID
         [HttpGet("{id}")]
