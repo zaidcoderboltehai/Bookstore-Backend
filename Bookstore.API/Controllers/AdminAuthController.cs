@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Bookstore.API.Attributes; // YE LINE ADD KIYA HAI
 
 namespace Bookstore.API.Controllers
 {
@@ -93,6 +94,7 @@ namespace Bookstore.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
+        [RateLimit(maxRequests: 5, timeWindowInSeconds: 300)] // YE LINE ADD KIYA HAI - 5 attempts in 5 minutes
         public async Task<IActionResult> Login(AdminLoginDto request)
         {
             try
