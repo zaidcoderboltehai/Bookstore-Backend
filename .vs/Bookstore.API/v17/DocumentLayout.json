@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\controllers\\adminauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\controllers\\adminauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\attributes\\ratelimitattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\attributes\\ratelimitattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\controllers\\adminauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\controllers\\adminauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C56D8794-FBE7-4BA4-AC38-A10ECC57A9D8}|Bookstore.Data\\Bookstore.Data.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.data\\repositories\\bookrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -373,7 +373,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
@@ -390,13 +390,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "RateLimitAttribute.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Attributes\\RateLimitAttribute.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Attributes\\RateLimitAttribute.cs",
               "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Attributes\\RateLimitAttribute.cs",
               "RelativeToolTip": "Bookstore.API\\Attributes\\RateLimitAttribute.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAADwvzIAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwC8AAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-27T11:19:04.818Z",
               "EditorCaption": ""
@@ -411,8 +411,7 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\AdminAuthService.cs",
               "ViewState": "AgIAABkAAAAAAAAAAIA5wCgAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-16T17:19:34.548Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:19:34.548Z"
             },
             {
               "$type": "Document",
@@ -424,8 +423,7 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\ForgotPasswordService.cs",
               "ViewState": "AgIAAC8AAAAAAAAAAAAlwCcAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-17T07:57:29.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-17T07:57:29.703Z"
             },
             {
               "$type": "Document",
@@ -441,20 +439,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "AdminAuthController.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Controllers\\AdminAuthController.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Controllers\\AdminAuthController.cs",
               "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Controllers\\AdminAuthController.cs",
               "RelativeToolTip": "Bookstore.API\\Controllers\\AdminAuthController.cs",
-              "ViewState": "AgIAAOMAAAAAAAAAAADwv+oAAAAwAAAAAAAAAA==",
+              "ViewState": "AgIAAOMAAAAAAAAAAADwv+MAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-16T17:23:26.969Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
@@ -1475,6 +1469,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-17T08:24:47.891Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }
