@@ -6,6 +6,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Bookstore.API.Models;
+using Bookstore.API.Services; // NEW: RabbitMQ service
 
 namespace Bookstore.API.Controllers
 {
@@ -16,13 +17,16 @@ namespace Bookstore.API.Controllers
     {
         private readonly IOrderService _service;
         private readonly ILogger<OrderController> _logger;
+        private readonly IRabbitMQService _rabbitMQService; // NEW: RabbitMQ service
 
         public OrderController(
             IOrderService service,
-            ILogger<OrderController> logger)
+            ILogger<OrderController> logger,
+            IRabbitMQService rabbitMQService) // NEW: RabbitMQ injection
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _rabbitMQService = rabbitMQService;
         }
 
         [HttpPost]
@@ -31,9 +35,13 @@ namespace Bookstore.API.Controllers
             try
             {
                 var userId = GetAuthenticatedUserId();
+                var userEmail = User.FindFirstValue(ClaimTypes.Email);
                 _logger.LogInformation("Creating new order for user {UserId}", userId);
 
                 var order = await _service.CreateOrderFromCartAsync(userId, dto.AddressId);
+
+                // NEW: Send RabbitMQ notification for order creation
+                _rabbitMQService.PublishOrderNotification(order.Id, userEmail);
 
                 _logger.LogInformation("Order {OrderId} created successfully for user {UserId}",
                     order.Id, userId);

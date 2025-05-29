@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Bookstore.API.Services; // NEW: Redis aur RabbitMQ services
 
 namespace Bookstore.API.Controllers
 {
@@ -18,12 +19,20 @@ namespace Bookstore.API.Controllers
     {
         private readonly IBookService _bookService;
         private readonly ILogger<BooksController> _logger;
+        private readonly IRedisService _redisService; // NEW: Redis service
+        private readonly IRabbitMQService _rabbitMQService; // NEW: RabbitMQ service
         private const int PageSize = 5;
 
-        public BooksController(IBookService bookService, ILogger<BooksController> logger)
+        public BooksController(
+            IBookService bookService,
+            ILogger<BooksController> logger,
+            IRedisService redisService, // NEW: Redis injection
+            IRabbitMQService rabbitMQService) // NEW: RabbitMQ injection
         {
             _bookService = bookService;
             _logger = logger;
+            _redisService = redisService;
+            _rabbitMQService = rabbitMQService;
         }
 
         // Get all books (Admin or User)
@@ -35,19 +44,33 @@ namespace Bookstore.API.Controllers
             {
                 _logger.LogInformation("GetAllBooks API called");
 
+                // NEW: Check Redis cache first
+                var cacheKey = "all_books";
+                var cachedBooks = await _redisService.GetAsync<object>(cacheKey);
+
+                if (cachedBooks != null)
+                {
+                    _logger.LogInformation("Books retrieved from Redis cache");
+                    return Ok(cachedBooks);
+                }
+
                 var books = await _bookService.GetAllBooksAsync();
                 var booksList = books.ToList();
 
-                _logger.LogInformation("Retrieved {BookCount} books successfully", booksList.Count);
-
-                return Ok(new
+                var response = new
                 {
                     Status = "Success",
                     Message = $"Retrieved {booksList.Count} books successfully",
                     Count = booksList.Count,
                     Data = booksList,
                     Timestamp = DateTime.UtcNow
-                });
+                };
+
+                // NEW: Cache the response in Redis for 5 minutes
+                await _redisService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5));
+
+                _logger.LogInformation("Retrieved {BookCount} books successfully and cached", booksList.Count);
+                return Ok(response);
             }
             catch (InvalidOperationException ex)
             {
@@ -94,6 +117,13 @@ namespace Bookstore.API.Controllers
             book.AdminId = adminId; // ✅ Set from logged-in admin
 
             var createdBook = await _bookService.AddBookAsync(book);
+
+            // NEW: Clear cache when new book is added
+            await _redisService.DeleteAsync("all_books");
+
+            // NEW: Send RabbitMQ notification
+            _rabbitMQService.PublishBookAddedNotification(createdBook.Id, createdBook.BookName);
+
             return CreatedAtAction(nameof(GetBook), new { id = createdBook.Id }, createdBook);
         }
 
@@ -106,6 +136,10 @@ namespace Bookstore.API.Controllers
                 return BadRequest(new { Error = "ID mismatch between URL and body" });
 
             await _bookService.UpdateBookAsync(book);
+
+            // NEW: Clear cache when book is updated
+            await _redisService.DeleteAsync("all_books");
+
             return NoContent();
         }
 
@@ -115,6 +149,10 @@ namespace Bookstore.API.Controllers
         public async Task<IActionResult> DeleteBook(int id)
         {
             await _bookService.DeleteBookAsync(id);
+
+            // NEW: Clear cache when book is deleted
+            await _redisService.DeleteAsync("all_books");
+
             return NoContent();
         }
 
@@ -178,6 +216,9 @@ namespace Bookstore.API.Controllers
                 var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 using var stream = file.OpenReadStream();
                 var importedCount = await _bookService.ImportBooksFromCsvAsync(stream, adminId);
+
+                // NEW: Clear cache after bulk import
+                await _redisService.DeleteAsync("all_books");
 
                 return Ok(new
                 {

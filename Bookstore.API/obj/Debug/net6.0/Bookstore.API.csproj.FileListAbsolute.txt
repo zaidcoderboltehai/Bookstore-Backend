@@ -80,3 +80,7 @@ C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\r
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.pdb
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\Bookstore.API.genruntimeconfig.cache
 C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\obj\Debug\net6.0\ref\Bookstore.API.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\Pipelines.Sockets.Unofficial.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\RabbitMQ.Client.dll
+C:\Users\Zaid Ansari\source\repos\Bookstore.API\Bookstore.API\bin\Debug\net6.0\StackExchange.Redis.dll

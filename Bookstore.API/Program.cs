@@ -24,6 +24,7 @@ using Bookstore.Data.Interfaces;
 using Bookstore.Data.Repositories;
 using System.Security.Claims;
 using Bookstore.API.Swagger;
+using Bookstore.API.Services; // NEW: Redis aur RabbitMQ services
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.LogTo(Console.WriteLine, LogLevel.Information);
     }
 });
+
+// NEW: Redis Configuration
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "BookstoreAPI";
+});
+
+// NEW: Redis Service Registration
+builder.Services.AddScoped<IRedisService, RedisService>();
+
+// NEW: RabbitMQ Service Registration
+builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 
 // API Behavior Configuration
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -139,7 +153,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Bookstore API",
         Version = "v1",
-        Description = "Complete Bookstore Management API"
+        Description = "Complete Bookstore Management API with Redis & RabbitMQ"
     });
 
     // Add JWT Authentication to Swagger

@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Bookstore API",
-    "description": "Complete Bookstore Management API",
+    "description": "Complete Bookstore Management API with Redis & RabbitMQ",
     "version": "v1"
   },
   "paths": {
