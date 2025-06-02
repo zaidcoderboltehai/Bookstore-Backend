@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\services\\rabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\rabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\services\\irabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\irabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -27,16 +35,8 @@
       "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\redisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\services\\rabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\rabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\services\\iredisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\iredisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\services\\irabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|solutionrelative:bookstore.api\\services\\irabbitmqservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{0622CF59-DB6D-46D8-A9C2-6C924ABF9CA9}|Bookstore.API\\Bookstore.API.csproj|c:\\users\\zaid ansari\\source\\repos\\bookstore.api\\bookstore.api\\bookstore.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
@@ -393,7 +393,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\appsettings.json",
               "RelativeDocumentMoniker": "Bookstore.API\\appsettings.json",
@@ -402,38 +402,11 @@
               "ViewState": "AgIAABEAAAAAAAAAAAAAACcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-04-16T17:35:12.247Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "RabbitMQService.cs",
-              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RabbitMQService.cs",
-              "RelativeDocumentMoniker": "Bookstore.API\\Services\\RabbitMQService.cs",
-              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RabbitMQService.cs",
-              "RelativeToolTip": "Bookstore.API\\Services\\RabbitMQService.cs",
-              "ViewState": "AgIAAEkAAAAAAAAAAAAswFcAAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-29T07:11:52.805Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "RedisService.cs",
-              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RedisService.cs",
-              "RelativeDocumentMoniker": "Bookstore.API\\Services\\RedisService.cs",
-              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RedisService.cs",
-              "RelativeToolTip": "Bookstore.API\\Services\\RedisService.cs",
-              "ViewState": "AgIAACUAAAAAAAAAAAAswC0AAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-29T06:58:09.437Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
               "Title": "RateLimitAttribute.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Attributes\\RateLimitAttribute.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Attributes\\RateLimitAttribute.cs",
@@ -441,12 +414,11 @@
               "RelativeToolTip": "Bookstore.API\\Attributes\\RateLimitAttribute.cs",
               "ViewState": "AgIAAEsAAAAAAAAAAADwv18AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-27T11:19:04.818Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-27T11:19:04.818Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Program.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Program.cs",
@@ -454,12 +426,11 @@
               "RelativeToolTip": "Bookstore.API\\Program.cs",
               "ViewState": "AgIAAN8AAAAAAAAAAADwv/IAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-16T17:35:55.874Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:35:55.874Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "BooksController.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Controllers\\BooksController.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Controllers\\BooksController.cs",
@@ -467,12 +438,11 @@
               "RelativeToolTip": "Bookstore.API\\Controllers\\BooksController.cs",
               "ViewState": "AgIAABIBAAAAAAAAAAAwwCcBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-22T16:36:02.577Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-22T16:36:02.577Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "OrderController.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Controllers\\OrderController.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Controllers\\OrderController.cs",
@@ -484,25 +454,8 @@
               "EditorCaption": ""
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "IRedisService.cs",
-              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\IRedisService.cs",
-              "RelativeDocumentMoniker": "Bookstore.API\\Services\\IRedisService.cs",
-              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\IRedisService.cs",
-              "RelativeToolTip": "Bookstore.API\\Services\\IRedisService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-29T06:52:18.246Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 1,
               "Title": "IRabbitMQService.cs",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\IRabbitMQService.cs",
               "RelativeDocumentMoniker": "Bookstore.API\\Services\\IRabbitMQService.cs",
@@ -515,6 +468,43 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "RabbitMQService.cs",
+              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RabbitMQService.cs",
+              "RelativeDocumentMoniker": "Bookstore.API\\Services\\RabbitMQService.cs",
+              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RabbitMQService.cs",
+              "RelativeToolTip": "Bookstore.API\\Services\\RabbitMQService.cs",
+              "ViewState": "AgIAADMAAAAAAAAAAAAYwFcAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T07:11:52.805Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "RedisService.cs",
+              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RedisService.cs",
+              "RelativeDocumentMoniker": "Bookstore.API\\Services\\RedisService.cs",
+              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\RedisService.cs",
+              "RelativeToolTip": "Bookstore.API\\Services\\RedisService.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAswC0AAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T06:58:09.437Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IRedisService.cs",
+              "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\IRedisService.cs",
+              "RelativeDocumentMoniker": "Bookstore.API\\Services\\IRedisService.cs",
+              "ToolTip": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Services\\IRedisService.cs",
+              "RelativeToolTip": "Bookstore.API\\Services\\IRedisService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T06:52:18.246Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 9,
               "Title": "Bookstore.API.csproj",
               "DocumentMoniker": "C:\\Users\\Zaid Ansari\\source\\repos\\Bookstore.API\\Bookstore.API\\Bookstore.API.csproj",
@@ -523,8 +513,7 @@
               "RelativeToolTip": "Bookstore.API\\Bookstore.API.csproj",
               "ViewState": "AgIAACkAAAAAAAAAAAAAADoAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-04-16T17:25:34.051Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:25:34.051Z"
             },
             {
               "$type": "Document",
@@ -536,8 +525,7 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\ForgotPasswordService.cs",
               "ViewState": "AgIAAC8AAAAAAAAAAAAlwCcAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-17T07:57:29.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-17T07:57:29.703Z"
             },
             {
               "$type": "Document",
@@ -573,8 +561,7 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\AdminAuthService.cs",
               "ViewState": "AgIAABkAAAAAAAAAAIA5wCgAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-16T17:19:34.548Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:19:34.548Z"
             },
             {
               "$type": "Document",
@@ -1222,8 +1209,7 @@
               "RelativeToolTip": "Bookstore.Business\\Bookstore.Business.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAA+AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-04-16T17:17:12.577Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:17:12.577Z"
             },
             {
               "$type": "Document",
@@ -1487,8 +1473,7 @@
               "RelativeToolTip": "Bookstore.Data\\Bookstore.Data.csproj",
               "ViewState": "AgIAABIAAAAAAAAAAAAUwCkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-04-16T17:10:38.438Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-16T17:10:38.438Z"
             },
             {
               "$type": "Document",
@@ -1549,6 +1534,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-17T08:24:47.891Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }

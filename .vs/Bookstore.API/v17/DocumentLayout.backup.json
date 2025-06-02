@@ -484,6 +484,10 @@
               "EditorCaption": ""
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 7,
               "Title": "IRedisService.cs",
@@ -532,7 +536,8 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\ForgotPasswordService.cs",
               "ViewState": "AgIAAC8AAAAAAAAAAAAlwCcAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-17T07:57:29.703Z"
+              "WhenOpened": "2025-04-17T07:57:29.703Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -568,7 +573,8 @@
               "RelativeToolTip": "Bookstore.Business\\Services\\AdminAuthService.cs",
               "ViewState": "AgIAABkAAAAAAAAAAIA5wCgAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-16T17:19:34.548Z"
+              "WhenOpened": "2025-04-16T17:19:34.548Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -1543,10 +1549,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-17T08:24:47.891Z"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }
